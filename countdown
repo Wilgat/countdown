@@ -1,6 +1,6 @@
 #!/bin/sh
 # =============================================================================
-# countdown – version 1.0.1
+# countdown – version 1.0.2
 # =============================================================================
 #
 # Lightweight per-user named countdown timers (volatile in RAM or persistent).
@@ -84,7 +84,7 @@
 
 # ----------------------------- Project Constants -----------------------------
 APP_NAME="countdown"           # ← HARDCODED - Required for curl | sh install
-VERSION="1.0.1"
+VERSION="1.0.2"
 DESCRIPTION="Lightweight per-user named countdown timers"
 REMOTE_VERSION=$VERSION
 SH=sh
@@ -143,7 +143,7 @@ SCRIPT_URL="https://raw.githubusercontent.com/${REPO_USER}/${REPO_NAME}/main/${A
 #   {"type":"error","message":"No countdown 'foo' running.","code":"no_countdown"}
 #
 #   About:
-#   {"type":"about","version":"1.0.1","installed":"true","shell":"bash",...}
+#   {"type":"about","version":"1.0.2","installed":"true","shell":"bash",...}
 #
 # When both --quiet and --json are used: --json takes precedence.
 #
@@ -255,7 +255,7 @@ output_text() {
 #   output_json "success" "${APP_NAME} started" "name" "build" "mode" "volatile"
 #   output_json "status" "${APP_NAME} running" "name" "default" "minutes" "7"
 #   output_json "error" "No ${APP_NAME} running" "code" "no_timer"
-#   output_json "about" "" "version" "1.0.1" "shell" "bash"   ← empty message is allowed
+#   output_json "about" "" "version" "1.0.2" "shell" "bash"   ← empty message is allowed
 #
 # - $1 = type (required)
 # - $2 = message (can be empty string "" for no message)
@@ -333,6 +333,7 @@ output_json_error() {
 # Respects --quiet and --json (prints nothing in those modes).
 #
 # !!! THIS IS PART OF THE SINGLE SOURCE OF TRUTH FOR OUTPUT !!!
+# Designed to be reusable in other projects.
 # =============================================================================
 
 msg_n() {
@@ -1016,13 +1017,13 @@ show_about() {
 
     # Installation status
     if is_installed; then
-        success "Countdown is installed."
+        success "${APP_NAME} is installed."
     else
         if [ -t 1 ]; then
-            warn "Countdown is NOT installed in your PATH."
+            warn "${APP_NAME} is NOT installed in your PATH."
             msg "   Recommended: curl -fsSL ${SCRIPT_URL} | ${SH}"
         else
-            warn "Countdown is NOT installed."
+            warn "${APP_NAME} is NOT installed."
             msg "   Recommended: curl -fsSL ${SCRIPT_URL} | ${SH}"
         fi
     fi
@@ -1148,7 +1149,7 @@ EOF
 # For persistent mode: always tries XDG_CACHE_HOME → ~/.cache → /tmp/${APP_NAME}_${USERNAME}
 #
 # !!! DO NOT MODIFY OR DUPLICATE THIS LOGIC !!!
-# All ${APP_NAME} functions must use this helper (via get_countdown_file or directly)
+# All ${APP_NAME} functions must use this helper (via get_app_file or directly)
 # to keep behavior 100% consistent.
 # =============================================================================
 
@@ -1199,7 +1200,7 @@ resolve_app_base_dir() {
 }
 
 # =============================================================================
-# get_countdown_file() - Return full path to Countdown file
+# get_app_file() - Return full path to Countdown file
 # =============================================================================
 #
 # Uses the central resolve_app_base_dir() helper to guarantee consistent
@@ -1213,25 +1214,26 @@ resolve_app_base_dir() {
 # It must remain a thin wrapper around the central resolver.
 # =============================================================================
 
-get_countdown_file() {
+get_app_file() {
     local name="$1"
     local requested_mode="$2"
     local base_dir
 
     base_dir=$(resolve_app_base_dir "$requested_mode")   # Reuse existing resolver
 
-    echo "${base_dir}/countdown_${USERNAME}_${name}"
+    # App filename format guarantees per-user isolation
+    echo "${base_dir}/${APP_NAME}_${USERNAME}_${name}"
 }
 
 # =============================================================================
-# sanitize_timer_name() - Prevent dangerous characters in timer names
+# sanitize_name() - Prevent dangerous characters in timer names
 # =============================================================================
 #
 # !!! DO NOT MODIFY OR SIMPLIFY THIS FUNCTION !!!
 # Security / robustness measure for filename safety.
 # =============================================================================
 
-sanitize_timer_name() {
+sanitize_name() {
     case "$NAME" in
         *[/\\:*?"<>|'\''"\`\$]*|*..*|*\$\(*|*${IFS}*)
             if [ "${JSON}" -eq 1 ]; then
@@ -1343,7 +1345,7 @@ countdown_start() {
     fi
 
     # Check if already running
-    if [ -f "$TIMER_FILE" ]; then
+    if [ -f "$APP_FILE" ]; then
         if [ "${JSON}" -eq 1 ]; then
             output_json "error" "Countdown '${NAME}' is already running." \
                 "code" "already_running" \
@@ -1359,7 +1361,7 @@ countdown_start() {
     start_time=$(date +%s)
     target_time=$((start_time + duration_seconds))
 
-    if ! printf "%s %s\n" "$start_time" "$target_time" > "$TIMER_FILE" 2>/dev/null; then
+    if ! printf "%s %s\n" "$start_time" "$target_time" > "$APP_FILE" 2>/dev/null; then
         if [ "${JSON}" -eq 1 ]; then
             output_json_error "Cannot create countdown file" "io_error"
         else
@@ -1387,14 +1389,14 @@ countdown_start() {
 #
 # Stops the countdown and reports how much time was left (or if it expired).
 #
-# Uses TIMER_FILE (which was resolved via get_countdown_file → central fallback).
+# Uses APP_FILE (which was resolved via get_app_file → central fallback).
 # No additional fallback code needed here.
 #
 # !!! DO NOT MODIFY OR SIMPLIFY !!!
 # =============================================================================
 
 countdown_stop() {
-    if [ ! -f "$TIMER_FILE" ]; then
+    if [ ! -f "$APP_FILE" ]; then
         if [ "${JSON}" -eq 1 ]; then
             output_json_error "No countdown '${NAME}' running." "no_countdown"
         else
@@ -1408,7 +1410,7 @@ countdown_stop() {
     local actual_mode="volatile"
     [ "$PERSIST" -eq 1 ] && actual_mode="persistent"
 
-    read -r start_time target_time < "$TIMER_FILE" 2>/dev/null || {
+    read -r start_time target_time < "$APP_FILE" 2>/dev/null || {
         if [ "${JSON}" -eq 1 ]; then
             output_json_error "Corrupted countdown file" "corrupted_data"
         else
@@ -1429,7 +1431,7 @@ countdown_stop() {
     fi
 
     # Remove the file
-    rm -f "$TIMER_FILE"
+    rm -f "$APP_FILE"
 
     if [ "${JSON}" -eq 1 ]; then
         if [ "$remaining" -gt 0 ]; then
@@ -1465,7 +1467,7 @@ countdown_stop() {
 # =============================================================================
 
 countdown_status() {
-    if [ ! -f "$TIMER_FILE" ]; then
+    if [ ! -f "$APP_FILE" ]; then
         if [ "${JSON}" -eq 1 ]; then
             output_json_error "No countdown '${NAME}' running." "no_countdown"
         else
@@ -1477,13 +1479,13 @@ countdown_status() {
     local start_time target_time current_time remaining
     local minutes seconds
 
-    read -r start_time target_time < "$TIMER_FILE" 2>/dev/null || {
+    read -r start_time target_time < "$APP_FILE" 2>/dev/null || {
         if [ "${JSON}" -eq 1 ]; then
             output_json_error "Corrupted countdown file" "corrupted_data"
         else
             error "Corrupted countdown file."
         fi
-        rm -f "$TIMER_FILE" 2>/dev/null || true
+        rm -f "$APP_FILE" 2>/dev/null || true
         exit 1
     }
 
@@ -1494,7 +1496,7 @@ countdown_status() {
     [ "$PERSIST" -eq 1 ] && actual_mode="persistent"
 
     if [ "$remaining" -le 0 ]; then
-        rm -f "$TIMER_FILE" 2>/dev/null || true
+        rm -f "$APP_FILE" 2>/dev/null || true
         if [ "${JSON}" -eq 1 ]; then
             output_json "status" "Countdown '${NAME}' has expired." \
                 "name" "$NAME" \
@@ -1623,25 +1625,34 @@ list_countdown() {
 #
 # Handles argument parsing and routes to the correct countdown functions.
 # Supports the desired syntax:
-#   countdown start [--persist] <duration>
-#   countdown start [--persist] <name> <duration>
-#   countdown status [--persist]
-#   countdown status [--persist] <name>
-#   countdown stop|kill|reset [--persist] <name>
+#   countdown start [--persist] [name] <duration>
+#   countdown status [--persist] [name]
+#   countdown stop|kill|reset [--persist] [name]
 #   countdown list [--persist]
 #
-# IMPORTANT:
-# This main_countdown() function is intentionally kept as the single entry point and
-# command dispatcher. All business logic lives in dedicated functions
-# (countdown_start, countdown_stop, countdown_status, list_countdown, resolve_app_base_dir,
-# show_about, etc.).
+# IMPORTANT DESIGN DECISION:
+#   The auto-install logic (`maybe_install` / `perform_self_install`) is triggered
+#   when the script is run with ZERO arguments via `curl | sh`.
 #
-# This design allows us to focus on refactoring or adding features in one
-# isolated place instead of hunting through the whole script.
+#   This is INTENTIONAL and CRITICAL for the one-liner installer to work.
+#   Without it, `curl -fsSL ... | sh` would only print help and exit, leaving
+#   the user with "command not found" — exactly the problem we are solving.
 #
-# !!! DO NOT REMOVE OR SIMPLIFY THIS COMMENT !!!
-# It serves as a strong reminder for future maintenance (including when AI
-# assistants try to "clean up" the code).
+#   Even though subcommands like "help", "version", or "about" exist,
+#   we still want to check/install first in the curl | sh context because
+#   the primary use-case of piping the raw script is installation.
+#
+#   This pattern is common in robust single-file CLI tools and must be preserved.
+#
+# !!! DO NOT REMOVE OR SIMPLIFY THE AUTO-INSTALL BLOCK !!!
+#   Many AI assistants will try to "clean it up", move it after parsing,
+#   or tie it only to specific subcommands.
+#   Doing so would break the one-liner installation experience (`curl | sh`),
+#   which is one of the core promises of this project.
+#
+#   Previous Grok versions already attempted to remove or relocate this logic.
+#   Respect this decision and keep the auto-install check at the top, before
+#   any argument parsing.
 # =============================================================================
 
 main_countdown() {
@@ -1651,10 +1662,17 @@ main_countdown() {
     local DURATION=""
 
     # === AUTO-INSTALL FOR ONE-LINER (curl | sh) ===
-    # This is the missing piece that makes the install command actually work
+    # This block MUST stay at the very top, before any argument parsing.
+    # It ensures that `curl ... | sh` actually installs the tool instead of
+    # just showing help and exiting with "command not found".
+    #
+    # perform_self_install / maybe_install is important here EVEN THOUGH
+    # a subcommand may be present later, because the main real-world usage
+    # of this script is the one-liner installer. Installing first is the
+    # expected behavior in that context.
     if ! is_installed && [ $# -eq 0 ]; then
         if [ "${JSON}" -eq 1 ] || [ "${QUIET}" -eq 1 ]; then
-            # Non-interactive one-liner → install silently
+            # Non-interactive / JSON mode → install silently
             perform_self_install
         else
             maybe_install
@@ -1727,13 +1745,16 @@ main_countdown() {
         exit 1
     fi
 
-    # Sanitize timer name
-    sanitize_timer_name
+    # === Sanitize timer NAME (only if it's a countdown operation) ===
+    if [ "$cmd" = "start" ] || [ "$cmd" = "stop" ] || [ "$cmd" = "status" ] || \
+       [ "$cmd" = "kill" ] || [ "$cmd" = "reset" ] || [ "$cmd" = "list" ]; then
+        sanitize_name
+    fi
 
     # Determine storage mode and file path
     local STORAGE_MODE
     STORAGE_MODE=$([ "$PERSIST" -eq 1 ] && echo "persistent" || echo "volatile")
-    TIMER_FILE=$(get_countdown_file "$NAME" "$STORAGE_MODE")
+    APP_FILE=$(get_app_file "$NAME" "$STORAGE_MODE")
 
     # === Phase 2: Dispatch commands ===
     case "$cmd" in
@@ -1750,7 +1771,7 @@ main_countdown() {
             ;;
 
         kill|reset)
-            if [ ! -f "$TIMER_FILE" ]; then
+            if [ ! -f "$APP_FILE" ]; then
                 if [ "${JSON}" -eq 1 ]; then
                     output_json_error "No countdown '${NAME}' running." "no_countdown"
                 else
@@ -1758,7 +1779,7 @@ main_countdown() {
                 fi
                 exit 1
             fi
-            rm -f "$TIMER_FILE"
+            rm -f "$APP_FILE"
             if [ "${JSON}" -eq 1 ]; then
                 output_json "success" "Countdown '${NAME}' has been discarded." \
                     "name" "$NAME" \

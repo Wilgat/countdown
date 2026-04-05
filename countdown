@@ -1650,7 +1650,19 @@ main_countdown() {
     local PERSIST=0
     local DURATION=""
 
-    # === Phase 1: Parse all arguments (improved & fixed) ===
+    # === AUTO-INSTALL FOR ONE-LINER (curl | sh) ===
+    # This is the missing piece that makes the install command actually work
+    if ! is_installed && [ $# -eq 0 ]; then
+        if [ "${JSON}" -eq 1 ] || [ "${QUIET}" -eq 1 ]; then
+            # Non-interactive one-liner → install silently
+            perform_self_install
+        else
+            maybe_install
+        fi
+        exit 0
+    fi
+
+    # === Phase 1: Parse all arguments (fixed start command) ===
     while [ $# -gt 0 ]; do
         case "$1" in
             --persist)
@@ -1674,7 +1686,6 @@ main_countdown() {
                 if [ "$cmd" = "start" ]; then
                     # Check if this argument looks like a duration
                     if printf '%s' "$1" | grep -qE '^[0-9]+[hms]?([0-9]+[hms]?)*$|^[0-9]+$'; then
-                        # It looks like a duration → use default name if not already set
                         if [ -z "$DURATION" ]; then
                             DURATION="$1"
                         else
@@ -1686,7 +1697,6 @@ main_countdown() {
                             exit 1
                         fi
                     else
-                        # Not a duration → treat as name (only if name is still default)
                         if [ "$NAME" = "default" ]; then
                             NAME="$1"
                         else
@@ -1717,7 +1727,7 @@ main_countdown() {
         exit 1
     fi
 
-    # Sanitize timer name (reuses existing function)
+    # Sanitize timer name
     sanitize_timer_name
 
     # Determine storage mode and file path

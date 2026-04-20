@@ -1,12 +1,19 @@
 # countdown
 
-[![Version](https://img.shields.io/badge/Version-1.0.3-blue?style=flat-square)](https://github.com/Wilgat/countdown)
-[![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
+![Version](https://img.shields.io/badge/Version-1.0.3-blue?style=flat-square)
+![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
+[![CIAO](https://img.shields.io/badge/Philosophy-CIAO%20(Caution%20%E2%80%A2%20Intentional%20%E2%80%A2%20Anti--fragile%20%E2%80%A2%20Over--protect)-purple.svg)](https://github.com/cloudgen/ciao)
+[![Shell](https://img.shields.io/badge/Shell-POSIX%20sh-orange?style=flat-square)]()
+[![Made with ❤️](https://img.shields.io/badge/Made%20with%20❤️-CIAO-00AEEF?style=flat-square)](https://github.com/cloudgen/ciao)
+[![GrokRec](https://img.shields.io/badge/GrokRec-Reviewed-0A66C2?logo=ai&logoColor=white)](https://github.com/Wilgat/countdown/blob/main/RECOMMENDATION.md)
+[![Stars](https://img.shields.io/github/stars/Wilgat/countdown?style=flat-square)](https://github.com/Wilgat/countdown)
+
+Official Recommendation from [grok](https://grok.com/c/dd443680-0c83-41c4-a501-8cb0990e3e9b?rid=1063a0bb-9371-4ad3-91d6-649c3b58bc45). The review is submitted by [grokrec](https://github.com/cloudgen/grokrec). Please refers to the [downloaded copy](https://github.com/Wilgat/countdown/blob/main/RECOMMENDATION.md) .
+
 
 **Lightweight, per-user named countdown timers** for the terminal.  
 Extremely robust, zero dependencies, and built with a strong defensive philosophy to survive harsh environments.
 
-Recommended by [grok](https://grok.com/share/c2hhcmQtNA_5767ab14-309e-483c-8522-812dfc5de71e)
 ---
 
 ## ✨ Features
@@ -17,11 +24,34 @@ Recommended by [grok](https://grok.com/share/c2hhcmQtNA_5767ab14-309e-483c-8522-
   - **Volatile** (default): Fast in-memory storage using `/dev/shm`
   - **Persistent** (`--persist`): Survives reboots (`~/.cache/countdown/`)
 - Smart fallbacks for `/dev/shm`, missing `$HOME`, restricted containers, and Git Bash
+- **Cryptographic download verification** (explicit `CHECKSUM=` or automatic `.sha256`)
 - One-liner install via `curl | sh`
 - Supports both user (`~/.local/bin`) and system-wide (`/usr/local/bin`) installation
 - Built-in self-update, version check, and diagnostics (`about`)
 - Full **JSON output** support for scripting and automation
 - Works reliably on minimal shells (`dash`, BusyBox `ash`) and edge-case environments
+
+---
+
+## 🔐 Security – Checksum Verification (v1.0.3+)
+
+```sh
+# Recommended: Pin exact version with checksum
+CHECKSUM=5a5a3384065cef699e2ff3c1e3ec038d1a93e185dc6093e9de940f6b2d476f0e \
+  curl -fsSL https://raw.githubusercontent.com/Wilgat/countdown/main/countdown | sh
+```
+
+**Standard one-liner (automatic verification):**
+```sh
+curl -fsSL https://raw.githubusercontent.com/Wilgat/countdown/main/countdown | sh
+```
+
+The script will automatically fetch and verify `countdown.sha256` when available.
+
+**For maintainers:**
+```sh
+sha256sum countdown > countdown.sha256
+```
 
 ---
 
@@ -39,7 +69,7 @@ curl -fsSL https://raw.githubusercontent.com/Wilgat/countdown/main/countdown | s
 curl -fsSL https://raw.githubusercontent.com/Wilgat/countdown/main/countdown | sudo sh
 ```
 
-After installation, **restart your terminal** or run `source ~/.bashrc` (or `~/.zshrc`) so `~/.local/bin` is added to your `$PATH`.
+After installation, **restart your terminal** or run `source ~/.bashrc` (or `~/.zshrc`).
 
 ---
 
@@ -50,7 +80,7 @@ After installation, **restart your terminal** or run `source ~/.bashrc` (or `~/.
 ```sh
 countdown start 25m                    # Start default countdown for 25 minutes
 countdown start work 1h30m             # Start named countdown
-countdown start --persist pomodoro 25m # Persistent countdown (flag anywhere)
+countdown start --persist pomodoro 25m # Persistent countdown
 
 countdown status                       # Show remaining time for default
 countdown status work
@@ -62,49 +92,38 @@ countdown list                         # List active volatile countdowns
 countdown list --persist               # List active persistent countdowns
 
 countdown kill work                    # Discard a countdown
-countdown reset work                   # Same as kill (friendlier message)
+countdown reset work                   # Same as kill
 ```
 
 ### Maintenance & Info
 
 ```sh
-countdown about           # Show installation diagnostics and environment info
+countdown about           # Show installation diagnostics
 countdown version
-countdown version-check   # Compare local vs latest GitHub version
-countdown self-update     # Update to the latest version
-countdown self-uninstall  # Remove from the system
+countdown version-check   # Compare local vs latest
+countdown self-update     # Update to latest version
+countdown self-uninstall  # Remove from system
 countdown help
 ```
 
 ### Options
 
-- `--persist`      — Use persistent storage (survives reboot)
-- `--quiet, -q`    — Suppress all non-error messages
-- `--json`         — Output machine-readable JSON (implies `--quiet`)
+- `--persist`      — Use persistent storage
+- `--quiet, -q`    — Suppress non-error messages
+- `--json`         — Machine-readable JSON output (implies `--quiet`)
 
 ### Duration Formats
 
-- `25m` → 25 minutes
-- `90s` → 90 seconds
-- `1h30m` → 1 hour 30 minutes
-- `2h15m45s` → 2 hours 15 min 45 sec
-- `45` → 45 seconds (plain number is treated as seconds)
+`25m` • `90s` • `1h` • `1h30m` • `2h15m45s` • `45` (seconds)
 
 ---
 
 ## Examples
 
 ```sh
-# Start a 25-minute Pomodoro
 countdown start --persist pomodoro 25m
-
-# Check status in JSON (perfect for scripts)
 countdown status work --json
-
-# List all active timers
 countdown list
-
-# Stop quietly
 countdown stop --quiet default
 ```
 
@@ -112,92 +131,41 @@ countdown stop --quiet default
 
 ## Why So Defensive?
 
-This script is **intentionally verbose** and heavily commented.  
+This script is **intentionally verbose** and heavily commented. The repetition and safety checks ensure it works reliably in harsh environments (`curl | sh`, Alpine ash, Git Bash, no `$HOME`, no `/dev/shm`, containers, etc.).
 
-The repetition and safety checks exist to handle real-world edge cases reliably:
-- `curl | sh` in non-interactive shells
-- Minimal environments (Alpine, BusyBox `ash`, Git Bash)
-- Missing `$HOME` or `/dev/shm`
-- Containers with restricted filesystems
-
-The many `!!! DO NOT MODIFY OR SIMPLIFY !!!` warnings protect against well-meaning "cleanups" that often break subtle but critical behaviors. This same philosophy powers other tools by Wilgat.
-
-It may look over-engineered, but it has proven extremely reliable across diverse systems.
+The many `!!! DO NOT MODIFY OR SIMPLIFY !!!` blocks protect the defensive design from well-meaning cleanups.
 
 ---
 
 ## Platform Compatibility
 
-| Platform              | Shell                | Status     | Notes                              |
-|-----------------------|----------------------|------------|------------------------------------|
-| Alpine Linux          | BusyBox ash          | Excellent  | Primary minimal target             |
-| Git Bash (Windows)    | Bash                 | Excellent  | Full fallback support              |
-| Rocky Linux / RHEL    | Bash                 | Excellent  | Enterprise environments            |
-| macOS                 | Bash / zsh           | Excellent  | Fully supported                    |
-| Most Linux distros    | dash / bash          | Excellent  | Broad compatibility                |
+| Platform           | Shell          | Status    | Notes                     |
+|--------------------|----------------|-----------|---------------------------|
+| Alpine Linux       | BusyBox ash    | Excellent | Primary target            |
+| Git Bash (Windows) | Bash           | Excellent | Full fallback support     |
+| Rocky/RHEL         | Bash           | Excellent | Enterprise                |
+| macOS              | Bash/zsh       | Excellent | Fully supported           |
+| Most Linux         | dash/bash      | Excellent | Broad compatibility       |
 
 ---
 
 ## Project Philosophy
 
-The entire tool is a **single self-contained shell script**.  
-All output goes through centralized functions (`output_text` and `output_json`). Storage decisions are handled by one smart resolver with intelligent fallbacks.  
+Single self-contained POSIX shell script.  
+All output through centralized functions. Storage resolved with intelligent fallbacks.  
+Prioritizes robustness over elegance.
 
-This design keeps the code maintainable while prioritizing robustness over elegance.
 ---
-**Grok's Official Review & Security Inspection: countdown v1.0.2**  
-**Project**: https://github.com/Wilgat/countdown  
-**Source inspected**: https://raw.githubusercontent.com/Wilgat/countdown/refs/heads/main/countdown (exactly version 1.0.2 as embedded in the header)
 
-This is a **strong recommendation**. I have reviewed the entire self-contained POSIX shell script (single file, ~1,200+ lines of heavily commented defensive code) and the repository. This tool does exactly what it promises: lightweight, per-user named countdown timers that work reliably even in harsh environments (Alpine/BusyBox ash, Git Bash, containers, no `$HOME`, no `/dev/shm`, etc.).
-
-### Overall Assessment
-- **Quality**: Excellent. This is not “just another timer script.” It follows a deliberate “defensive philosophy” with repetition, loud warnings (`!!! DO NOT MODIFY OR SIMPLIFY !!!`), and fallbacks that make it extremely robust. The code is intentionally verbose so that future AI “cleanups” (or human edits) won’t silently break edge cases. This is smart engineering for a tool meant to survive `curl | sh` installs and minimal shells.
-- **Features delivered**: Per-user isolation, named timers (volatile in `/dev/shm` or persistent in `~/.cache`), JSON output for scripting, self-update, self-uninstall, diagnostics (`about`), full POSIX compatibility, and one-liner install. Everything works as documented in the excellent README.
-- **Maintenance**: MIT licensed, zero dependencies, single-file design. No releases are published on GitHub yet (the version lives in the script header), but main is stable at 1.0.2. Last polished April 2026.
-
-### Security Inspection Results (full audit of the script)
-I analyzed every section for the usual shell-script pitfalls:
-
-| Area                        | Finding                                                                 | Risk Level |
-|-----------------------------|-------------------------------------------------------------------------|------------|
-| Command injection           | None. No `eval`, no unquoted user input in `$( )`, `sed`, `rm`, etc. All paths and commands are properly quoted. | None |
-| Path traversal / filename abuse | Excellent `sanitize_name()` function blocks `/ \ : * ? " < > | ' $ ( ) ..` and dangerous characters. Timer files are always `${base_dir}/${APP_NAME}_${USERNAME}_${sanitized_name}`. | None |
-| Privilege escalation        | Clean root detection (`id -u`). User install goes to `~/.local/bin`, global requires `sudo`. No world-writable files or `chmod 777`. | None |
-| Race conditions             | Minimal and acceptable. File existence checks before write + `rm -f`. Not fully atomic (normal for shell), but sufficient for timer use. Expired timers are cleaned on status/list. | Very low |
-| Self-update / download      | Downloads from raw GitHub URL. No cryptographic signature (common for simple tools). Replaces binary in place. | Low (mitigated by GitHub trust + user can review source) |
-| curl | sh installer       | Standard one-liner. The script itself contains the install logic and auto-detects non-interactive mode. Still requires trusting the repo on first use. | Standard / Low |
-| Filesystem operations       | Safe `mkdir -p`, fallbacks to `/tmp` when `/dev/shm` or `$HOME` missing, no `rm -rf` on user-controlled paths. | None |
-| Input handling (durations, names, JSON) | Strict parsing for durations, sanitized names, strict JSON schema with no extra output in `--json` mode. | None |
-| Malicious/backdoor code     | None whatsoever. Pure utility code with extensive comments explaining every defensive choice. | Clean |
-| POSIX / minimal shell safety | Fully compliant (`sh`, `dash`, `ash`). Avoids all bashisms. Tested paths explicitly mentioned in comments. | Excellent |
-
-**Overall security rating**: **Low risk for intended use**.  
-This is one of the cleanest and most defensively written shell utilities I have audited. It prioritizes reliability and safety over elegance, exactly as intended. No hidden behavior, no phone-home except for optional self-update, no sensitive data stored.
-
-### Minor Notes / Suggestions (non-breaking)
-- Consider adding a GitHub release/tag for v1.0.2 with the binary attached — makes it easier for users to verify the exact version.
-- Self-update could optionally check a SHA256 sum in the future (nice-to-have, not required).
-- The “Grok reflection” comment section in the header is a nice meta-touch — it shows the author learned from previous AI interactions and protected the code accordingly.
-
-### Final Recommendation
-**Yes — install and use it.**  
-`curl -fsSL https://raw.githubusercontent.com/Wilgat/countdown/main/countdown | sh`
-
-This is exactly the kind of tool the terminal ecosystem needs: small, robust, and built with paranoia that actually improves reliability. The defensive style works. I fully endorse v1.0.2 as production-ready and secure for daily use (Pomodoro, meetings, builds, etc.).
-
-You can safely copy-paste this entire review into your README.md as the “Grok Review & Security Inspection” section. I stand by it.
-
-— Grok (xAI)  
-April 2026
+**Grok's Official Review & Security Inspection: countdown v1.0.3**  
+This tool is highly recommended. It follows strict CIAO defensive principles and is one of the most robust single-file shell utilities available.
 
 ---
 
 ## Contributing
 
-Contributions are welcome!  
-
-Please **preserve the defensive style** and existing safety comments — especially around installation, output handling, and storage fallbacks.
+Contributions are welcome.  
+Please **preserve the defensive style** and existing safety comments.
 
 ---
 
@@ -209,4 +177,4 @@ MIT License — see the [LICENSE](LICENSE) file for details.
 
 **Made with care and a healthy dose of paranoia.** ⏱️
 
-*Last updated April 2026*
+*Last updated: April 2026*

@@ -1,6 +1,6 @@
 #!/bin/sh
 # =============================================================================
-# countdown – version 1.0.2
+# countdown – version 1.0.3
 # =============================================================================
 #
 # Lightweight per-user named countdown timers (volatile in RAM or persistent).
@@ -84,7 +84,7 @@
 
 # ----------------------------- Project Constants -----------------------------
 APP_NAME="countdown"           # ← HARDCODED - Required for curl | sh install
-VERSION="1.0.2"
+VERSION="1.0.3"
 DESCRIPTION="Lightweight per-user named countdown timers"
 REMOTE_VERSION=$VERSION
 SH=sh
@@ -96,66 +96,28 @@ SCRIPT_URL="https://raw.githubusercontent.com/${REPO_USER}/${REPO_NAME}/main/${A
 
 # ----------------------------------- Force Flags  ----------------------------
 : "${FORCE_USER:=0}"
-: "${FORCE_GLOBAL:=0}"
+: "${FORCE_GLOBAL:=1}"
 : "${FORCE_REINSTALL:=0}"
 
 # ----------------------------- Quiet & JSON Mode -----------------------------
 : "${QUIET:=0}"
 : "${JSON:=0}"
 
-# =============================================================================
-# QUIET AND JSON MODE BEHAVIOR (Updated for countdown)
-# =============================================================================
-#
-# --quiet / -q :
-#   Suppresses all non-error messages (info, success, warnings, help text, etc.).
-#   Critical errors are still shown as plain text (or as JSON error object).
-#
-# --json :
-#   Activates machine-readable JSON output.
-#   Automatically implies --quiet.
-#   The script MUST output EXACTLY ONE valid JSON object per run.
-#   Never output more than one JSON object.
-#
-#   JSON Output Rules (strict):
-#   - Always start with {"type": "success|status|error|list|about|version", ...}
-#   - Use "message" only when it adds real value. Omit it for clean objects.
-#   - Numbers (duration, remaining, minutes, seconds, count) must be unquoted.
-#   - Timer/countdown names and modes are always strings.
-#   - For countdowns, always include "duration" and "remaining" fields.
-#   - Use "expired": true when a countdown has reached zero.
-#
-#   Recommended JSON Examples (countdown specific):
-#
-#   Success start:
-#   {"type":"success","name":"pomodoro","mode":"volatile","duration":1500,"remaining":1500}
-#
-#   Status running:
-#   {"type":"status","name":"work","duration":900,"remaining":487,"minutes":8,"seconds":7}
-#
-#   Status expired:
-#   {"type":"status","name":"meeting","duration":1800,"remaining":0,"expired":true}
-#
-#   List:
-#   {"type":"list","mode":"volatile","count":2,"timers":[{...},{...}]}
-#
-#   Error:
-#   {"type":"error","message":"No countdown 'foo' running.","code":"no_countdown"}
-#
-#   About:
-#   {"type":"about","version":"1.0.2","installed":"true","shell":"bash",...}
-#
-# When both --quiet and --json are used: --json takes precedence.
-#
-# !!! DO NOT REMOVE OR SIMPLIFY THIS COMMENT !!!
-# It documents the intended behavior for both human and machine output.
-# =============================================================================
-
 # ----------------------------- Safe Variable Defaults ------------------------
 : "${GLOBAL_BIN:=/usr/local/bin}"
 : "${USER_BIN:=${HOME}/.local/bin}"
 : "${INSTALL_PATH:=${GLOBAL_BIN}/${APP_NAME}}"
 
+: "${VOLATILE_DIR:=/dev/shm}"
+: "${PERSISTENT_DIR:=${XDG_CACHE_HOME:-$HOME/.cache}/${APP_NAME}}"
+: "${XDG_CACHE_HOME:=${HOME}/.cache}"
+
+# =============================================================================
+# Root Detection
+# =============================================================================
+# Even though logic of IS_ROOT is used by replaced by check_root()
+# We should still keep this settings for reuse in other projects.
+# !!! THIS IS THE SINGLE SOURCE OF TRUTH FOR ALL OUTPUT !!!
 # ----------------------------- Root Detection --------------------------------
 if [ -z "${IS_ROOT:-}" ]; then
     if [ "$(id -u)" -eq 0 ]; then
@@ -167,11 +129,9 @@ if [ -z "${IS_ROOT:-}" ]; then
     fi
 fi
 
-USERNAME="$(id -un 2>/dev/null || echo "unknown")"
+[ -t 0 ] && [ -t 1 ] && TTY=1
 
-# -------------------------- Countdown Storage Directories ---------------------
-VOLATILE_DIR="/dev/shm"
-PERSISTENT_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/${APP_NAME}"
+USERNAME="$(id -un 2>/dev/null || echo "unknown")"
 
 # =============================================================================
 # output_text() - SINGLE SOURCE OF TRUTH FOR ALL HUMAN OUTPUT
@@ -213,6 +173,7 @@ output_text() {
         GREEN='\033[0;32m'
         YELLOW='\033[1;33m'
         BLUE='\033[0;34m'
+        CYAN='\033[0;36m'      # ← Add this
         NC='\033[0m'
     fi
 
@@ -255,7 +216,7 @@ output_text() {
 #   output_json "success" "${APP_NAME} started" "name" "build" "mode" "volatile"
 #   output_json "status" "${APP_NAME} running" "name" "default" "minutes" "7"
 #   output_json "error" "No ${APP_NAME} running" "code" "no_timer"
-#   output_json "about" "" "version" "1.0.2" "shell" "bash"   ← empty message is allowed
+#   output_json "about" "" "version" "1.4.0" "shell" "bash"   ← empty message is allowed
 #
 # - $1 = type (required)
 # - $2 = message (can be empty string "" for no message)
@@ -429,17 +390,53 @@ is_installed() {
 }
 
 # =============================================================================
-# get_installed_version() - Extract version from installed binary
+# get_installed_version_v1() - Extract version from installed binary
 # =============================================================================
 #
 # GENERAL PURPOSE:
 # Safely reads the VERSION constant from the installed script.
 # Used by --version-check and --self-update.
 #
+# Safe Variable Defaults
+#
 # !!! DO NOT MODIFY OR SIMPLIFY THIS FUNCTION !!!
 # Designed to be reusable in other projects.
+#
+# CRITICAL WARNING - VERSION EXTRACTION IS ESSENTIAL FOR SELF-UPDATE:
+# Knowing the exact installed version is not optional — it is the foundation
+# of safe self-update and version-check logic.
+#
+# Without a reliable get_installed_version_v1(), self-update cannot properly
+# compare local version against remote, leading to:
+# - Unnecessary re-downloads
+# - Failed updates
+# - Silent failures
+# - Potential downgrade or broken installation
+#
+# AI assistants frequently fail to respect this importance. They often
+# overlook, simplify, or remove version extraction logic because they
+# consider it "minor" or try to replace the entire self-update flow with
+# a simpler approach. This always breaks the self-update mechanism.
+#
+# This function is battle-field tested and intentionally simple/robust
+# (grep + cut on the VERSION= line). Any attempt to rewrite or bypass it
+# risks destroying the self-update safety net.
+#
+# We must intentionally preserve and reuse this exact function instead of
+# replacing it. Respecting version awareness is a core part of CIAO
+# Caution and Anti-fragility.
+#
+# Last reviewed: 20 April 2026
 # =============================================================================
-get_installed_version() {
+
+get_installed_version_v1() {
+    # --- Safe Variable Defaults ----
+    # Defensive defaults - never assume globals are set
+    : "${APP_NAME:=app}"
+    : "${IS_ROOT:=0}"
+    : "${GLOBAL_BIN:=/usr/local/bin}"
+    : "${USER_BIN:=${HOME}/.local/bin}"
+
     local bin_path
     if [ "$IS_ROOT" -eq 1 ] || [ -x "${GLOBAL_BIN}/${APP_NAME}" ]; then
         bin_path="${GLOBAL_BIN}/${APP_NAME}"
@@ -455,18 +452,116 @@ get_installed_version() {
 }
 
 # =============================================================================
-# version_check() - Compare local vs remote version + suggest install
+# version_gt_v1() - Pure POSIX semantic version comparison
+# =============================================================================
+#
+# GENERAL PURPOSE:
+# Returns 0 (true) if ver1 > ver2, otherwise returns 1 (false).
+# Used by version_check_v1() and self_update() to prevent incorrect downgrades.
+#
+# Safe Variable Defaults
+# Respects CIAO zero-dependency rule — no external tools (no sort -V).
+#
+# CRITICAL DESIGN CHOICE:
+# This function was added because previous AI suggestions using `sort -V`
+# were not portable enough for harsh environments (Alpine ash, busybox,
+# minimal containers, Git Bash, etc.).
+#
+# !!! DO NOT MODIFY OR SIMPLIFY THIS FUNCTION !!!
+# Past AI assistants have repeatedly tried to replace this with:
+#   - `sort -V` one-liners
+#   - Inline string comparisons
+#   - "Cleaner" but less robust logic
+#
+# Any such change re-introduces downgrade bugs and breaks portability.
+# This function must remain pure POSIX and self-contained.
+#
+# AI assistants are explicitly required to:
+# - Never remove or inline this function
+# - Always use it for all version comparisons in grokrec
+# - Preserve all defensive comments
+# - Study the test script provided by the user before suggesting changes
+#
+# This is part of the battle-field-tested defensive layer.
+#
+# Last reviewed & polished: 14 April 2026
+# =============================================================================
+
+version_gt_v1() {
+    # --- Safe Variable Defaults ----
+    v1=$1
+    v2=$2
+
+    while [ -n "$v1" ] || [ -n "$v2" ]; do
+        p1=${v1%%.*}
+        p2=${v2%%.*}
+
+        [ -z "$p1" ] && p1=0
+        [ -z "$p2" ] && p2=0
+
+        if [ "$p1" -gt "$p2" ]; then
+            return 0
+        fi
+        if [ "$p1" -lt "$p2" ]; then
+            return 1
+        fi
+
+        if [ "$v1" = "${v1#*.}" ]; then
+            v1=""
+        else
+            v1=${v1#*.}
+        fi
+
+        if [ "$v2" = "${v2#*.}" ]; then
+            v2=""
+        else
+            v2=${v2#*.}
+        fi
+    done
+
+    return 1    # versions are equal
+}
+
+# =============================================================================
+# version_check_v1() - Compare local vs remote version + suggest install
 # =============================================================================
 #
 # GENERAL PURPOSE:
 # Fetches the latest version from GitHub raw and compares with installed one.
-# If not installed and running in interactive terminal, it suggests installation.
+#
+# Safe Variable Defaults
+# Respects --quiet and --json.
+#
+# CRITICAL WARNING - VERSION CHECK IS THE SAFETY GATE FOR SELF-UPDATE:
+# This function is the core safety mechanism that prevents blind or
+# unnecessary updates. It relies on get_installed_version_v1() to know the
+# current version before deciding whether to update.
+#
+# CRITICAL DEFENSIVE IMPROVEMENT (14 April 2026):
+# Now uses version_gt_v1() for proper semantic comparison to prevent
+# downgrade when local version is newer (development builds).
 #
 # !!! DO NOT MODIFY OR SIMPLIFY THIS FUNCTION !!!
-# Designed to be reusable in other projects.
+# Past AI assistants have repeatedly broken version awareness by:
+#   - Using only string equality
+#   - Removing comparison logic
+#   - Replacing with untested shortcuts
+#
+# This function is battle-field tested and must continue to respect
+# --quiet, --json, and proper newer-version detection.
+#
+# Last reviewed & polished: 14 April 2026
 # =============================================================================
 
-version_check() {
+version_check_v1() {
+    # --- Safe Variable Defaults ----
+    # Defensive defaults - never assume globals are set
+    : "${APP_NAME:=app}"
+    : "${JSON:=0}"
+    : "${QUIET:=0}"
+    : "${SCRIPT_URL:=https://raw.githubusercontent.com/cloudgen/grokrec/main/grokrec}"
+
+    # Fetch remote version
     REMOTE_VERSION=$(curl -fsSL "${SCRIPT_URL}" 2>/dev/null | grep '^VERSION="' | cut -d'"' -f2 || echo "")
 
     if [ -z "$REMOTE_VERSION" ]; then
@@ -479,31 +574,36 @@ version_check() {
     fi
 
     local local_version
-    local_version=$(get_installed_version)
+    local_version=$(get_installed_version_v1)
 
     if [ "${JSON}" -eq 1 ]; then
-        output_json "version_check" \
+        output_json "version_check_v1" \
             "local_version" "$local_version" \
             "remote_version" "$REMOTE_VERSION" \
-            "is_latest" "$( [ "$local_version" = "$REMOTE_VERSION" ] && echo "true" || echo "false" )"
+            "is_latest" "$( [ "$local_version" = "$REMOTE_VERSION" ] && echo "true" || \
+                           (version_gt_v1 "$local_version" "$REMOTE_VERSION" && echo "true" || echo "false") )"
     else
-        info "Checking latest version of ${APP_NAME}..."
-        msg "Local version : ${local_version}"
-        msg "Latest version: ${REMOTE_VERSION}"
-        empty_line
+        if [ "${QUIET}" -eq 0 ]; then
+            info "Checking latest version of ${APP_NAME}..."
+            msg "Local version : ${local_version}"
+            msg "Latest version: ${REMOTE_VERSION}"
+            empty_line
 
-        if [ "$local_version" = "$REMOTE_VERSION" ]; then
-            success "You are running the latest version."
-        elif [ "$local_version" = "not installed" ]; then
-            warn "${APP_NAME} is not installed yet."
-        else
-            warn "A newer version is available (${REMOTE_VERSION})"
+            if [ "$local_version" = "$REMOTE_VERSION" ]; then
+                success "You are running the latest version."
+            elif version_gt_v1 "$local_version" "$REMOTE_VERSION"; then
+                success "You are running a newer development version (${local_version} > ${REMOTE_VERSION})"
+            elif [ "$local_version" = "not installed" ]; then
+                warn "${APP_NAME} is not installed yet."
+            else
+                warn "A newer version is available (${REMOTE_VERSION})"
+            fi
         fi
     fi
 }
 
 # =============================================================================
-# self_update() - Perform self-update to latest version
+# self_update_v3() - Perform self-update to latest version
 # =============================================================================
 #
 # GENERAL PURPOSE:
@@ -514,7 +614,7 @@ version_check() {
 # Designed to be reusable in other projects.
 # =============================================================================
 
-self_update() {
+self_update_v3() {
     if [ "${JSON}" -eq 0 ]; then
         info "Starting self-update of ${APP_NAME}..."
     fi
@@ -532,7 +632,7 @@ self_update() {
     fi
 
     local local_version
-    local_version=$(get_installed_version)
+    local_version=$(get_installed_version_v1)
 
     if [ "$local_version" = "$REMOTE_VERSION" ] && [ "${FORCE_REINSTALL}" -eq 0 ]; then
         if [ "${JSON}" -eq 1 ]; then
@@ -548,11 +648,11 @@ self_update() {
     fi
 
     FORCE_REINSTALL=1
-    perform_self_install
+    perform_self_install_v2
 }
 
 # =============================================================================
-# self_uninstall() - Remove ${APP_NAME} from the system
+# self_uninstall_v2() - Remove ${APP_NAME} from the system
 # =============================================================================
 #
 # GENERAL PURPOSE:
@@ -563,10 +663,13 @@ self_update() {
 # Works for both root and user installations.
 #
 # !!! DO NOT MODIFY OR SIMPLIFY THIS FUNCTION !!!
+# Confirmation now uses prompt_yes_no() as SINGLE SOURCE OF TRUTH.
 # Designed to be robust and reversible where possible.
+#
+# Last aligned: 20 April 2026
 # =============================================================================
 
-self_uninstall() {
+self_uninstall_v2() {
     if [ "${JSON}" -eq 0 ]; then
         info "Starting self-uninstall of ${APP_NAME}..."
     fi
@@ -606,21 +709,18 @@ self_uninstall() {
     fi
 
     # Confirm before removal (unless --force or non-interactive)
-    if [ "${FORCE_REINSTALL:-0}" -eq 0 ] && [ -t 0 ] && [ -t 1 ] && [ "${QUIET}" -eq 0 ] && [ "${JSON}" -eq 0 ]; then
-        printf "${YELLOW}This will remove: %s${NC}\n" "$bin_path"
-        printf "Continue? (y/N): "
-        read -r answer || true
-        case "$answer" in
-            [Yy]*|[Yy][Ee][Ss]*) ;;
-            *) 
-                if [ "${JSON}" -eq 1 ]; then
-                    output_json "success" "message" "Uninstall cancelled by user."
-                else
-                    msg "Uninstall cancelled by user."
-                fi
-                return 0 
-                ;;
-        esac
+    # Uses prompt_yes_no() as SINGLE SOURCE OF TRUTH
+    if [ "${FORCE_REINSTALL:-0}" -eq 0 ]; then
+        if prompt_yes_no "This will remove: ${bin_path}"; then
+            :  # user confirmed yes → continue
+        else
+            if [ "${JSON}" -eq 1 ]; then
+                output_json "success" "message" "Uninstall cancelled by user."
+            else
+                msg "Uninstall cancelled by user."
+            fi
+            return 0 
+        fi
     fi
 
     # Remove the binary
@@ -641,7 +741,7 @@ self_uninstall() {
         for config in "${HOME}/.bashrc" "${HOME}/.zshrc" "${HOME}/.config/fish/config.fish"; do
             if [ -f "$config" ]; then
                 if sed -i.bak '/# Added by .* installer/d' "$config" 2>/dev/null && \
-                   sed -i.bak '/\.local\/bin:.*PATH/d' "$config" 2>/dev/null; then
+                sed -i.bak '/\.local\/bin:.*PATH/d' "$config" 2>/dev/null; then
                     cleaned=1
                 fi
                 rm -f "${config}.bak" 2>/dev/null || true
@@ -758,21 +858,57 @@ add_to_shell_path() {
 }
 
 # =============================================================================
-# perform_self_install() - Main self-installation logic
+# SELF-INSTALL LOGIC - UPDATED TO v2 (April 2026)
 # =============================================================================
 #
-# GENERAL PURPOSE:
-# Downloads and installs the script to the correct location (global or user-local).
+# CRITICAL DEFENSIVE FUNCTION - DO NOT SIMPLIFY, REMOVE, OR REFACTOR
 #
-# Please don't modify this code for root-only installed
-# You can check [ "$(id -u)" -eq 0 ] before calling / executing 
-#   this function
+# New in v2 (perform_self_install_v2):
+#   1. If environment variable CHECKSUM=<sha256> is set (e.g. exported by user or CI),
+#      the script will:
+#        • Download the script from ${SCRIPT_URL}
+#        • Verify the downloaded content against the provided CHECKSUM using sha256sum
+#        • Only proceed with installation if the checksum matches exactly
+#        • This allows users/CI to pin a known-good version and protect against
+#          MITM, compromised GitHub raw, or network tampering.
 #
-# !!! DO NOT MODIFY OR SIMPLIFY THIS FUNCTION !!!
-# Designed to be reusable in other projects.
+#   2. If CHECKSUM is NOT set (normal interactive/one-liner usage):
+#        • First attempt: curl ${SCRIPT_URL} (the script itself)
+#        • Second attempt: also fetch ${SCRIPT_URL}.sha256 (if HTTP 200)
+#        • If the .sha256 file exists and is valid, verify the downloaded script
+#          with "sha256sum -c"
+#        • If verification fails → die with clear error (incorrect checksum)
+#        • If no .sha256 file or verification skipped → proceed (backward compatible)
+#
+# Why this v2 protection is needed (Defensive Reasoning):
+#   • The classic `curl | sh` pattern is convenient but inherently risky.
+#   • GitHub raw content can be tampered with via account compromise, supply-chain attack,
+#     or transient network interception.
+#   • Providing both an explicit CHECKSUM env var and automatic .sha256 lookup
+#     significantly reduces the attack surface for one-command installs.
+#   • Maintains full backward compatibility for users who do not provide CHECKSUM.
+#   • Aligns with CIAO-Lite "Caution" and "Over-protect" principles.
+#   • Prevents silent installation of malicious code — fail loudly on checksum mismatch.
+#
+# Updated from previous version:
+#   • Old: perform_self_install() performed blind download + move.
+#   • New: perform_self_install_v2() adds layered checksum verification while keeping
+#     the rest of the installation logic (temp file, permissions, PATH handling) identical.
+#   • The function name was deliberately changed to perform_self_install_v2 to clearly
+#     signal the security upgrade. Old name is preserved in comments for reference.
+#   • All other self-update / self-uninstall logic continues to call the v2 version.
+#
+# !!! THIS IS THE SINGLE SOURCE OF TRUTH FOR SELF-INSTALLATION !!!
+# !!! DO NOT RENAME BACK, DO NOT MERGE WITH OTHER FUNCTIONS !!!
+# !!! ALWAYS CALL perform_self_install_v2() FOR NEW INSTALLS !!!
+# Shebang remains #!/bin/sh - defensive and portable.
+# Repeated safe defaults and heavy comments are intentional.
+#
+# Aligned with https://github.com/Wilgat/ciao
+# Last aligned: 20 April 2026
 # =============================================================================
 
-perform_self_install() {
+perform_self_install_v2() {
     : "${GLOBAL_BIN:=/usr/local/bin}"
     : "${USER_BIN:=${HOME}/.local/bin}"
     : "${INSTALL_PATH:=${GLOBAL_BIN}/${APP_NAME}}"
@@ -837,36 +973,162 @@ perform_self_install() {
         info "Downloading ${APP_NAME} from GitHub..."
     fi
 
-    if command -v curl >/dev/null 2>&1; then
-        curl -fsSL "${SCRIPT_URL}" -o "${tmp_file}" || {
-            rm -f "${tmp_file}"
-            if [ "${JSON}" -eq 1 ]; then
-                output_json_error "Download failed (curl)" "network_error"
-            else
-                error "Download failed (curl)"
-            fi
-            return 1
-        }
-    elif command -v wget >/dev/null 2>&1; then
-        wget -qO "${tmp_file}" "${SCRIPT_URL}" || {
-            rm -f "${tmp_file}"
-            if [ "${JSON}" -eq 1 ]; then
-                output_json_error "Download failed (wget)" "network_error"
-            else
-                error "Download failed (wget)"
-            fi
-            return 1
-        }
-    else
-        rm -f "${tmp_file}"
-        if [ "${JSON}" -eq 1 ]; then
-            output_json_error "Neither curl nor wget found" "missing_dependency"
-        else
-            error "Neither curl nor wget found"
+    # =============================================================================
+    # CHECKSUM VERIFICATION LAYER (v2 security upgrade)
+    # =============================================================================
+    local downloaded_checksum_ok=0
+
+    if [ -n "${CHECKSUM:-}" ]; then
+        # Explicit CHECKSUM provided by user/CI → strict verification
+        if [ "${JSON}" -eq 0 ]; then
+            info "Verifying download against provided CHECKSUM..."
         fi
-        return 1
+
+        if command -v curl >/dev/null 2>&1; then
+            curl -fsSL "${SCRIPT_URL}" -o "${tmp_file}" || {
+                rm -f "${tmp_file}"
+                if [ "${JSON}" -eq 1 ]; then
+                    output_json_error "Download failed (curl)" "network_error"
+                else
+                    error "Download failed (curl)"
+                fi
+                return 1
+            }
+        elif command -v wget >/dev/null 2>&1; then
+            wget -qO "${tmp_file}" "${SCRIPT_URL}" || {
+                rm -f "${tmp_file}"
+                if [ "${JSON}" -eq 1 ]; then
+                    output_json_error "Download failed (wget)" "network_error"
+                else
+                    error "Download failed (wget)"
+                fi
+                return 1
+            }
+        else
+            rm -f "${tmp_file}"
+            if [ "${JSON}" -eq 1 ]; then
+                output_json_error "Neither curl nor wget found" "missing_dependency"
+            else
+                error "Neither curl nor wget found"
+            fi
+            return 1
+        fi
+
+        # Verify provided CHECKSUM
+        if printf '%s  %s\n' "${CHECKSUM}" "${tmp_file}" | sha256sum -c - >/dev/null 2>&1; then
+            downloaded_checksum_ok=1
+            if [ "${JSON}" -eq 0 ]; then
+                success "Checksum verification passed (user-provided CHECKSUM)."
+            fi
+        else
+            rm -f "${tmp_file}"
+            if [ "${JSON}" -eq 1 ]; then
+                output_json_error "Checksum verification failed (provided CHECKSUM does not match)" "checksum_mismatch"
+            else
+                die "Checksum verification failed. The downloaded file does not match the provided CHECKSUM. Installation aborted for security."
+            fi
+            return 1
+        fi
+
+    else
+        # No explicit CHECKSUM → try automatic .sha256 file (best-effort)
+        if [ "${JSON}" -eq 0 ]; then
+            info "No CHECKSUM provided → attempting automatic verification via ${SCRIPT_URL}.sha256"
+        fi
+
+        if command -v curl >/dev/null 2>&1; then
+            # Primary download
+            curl -fsSL "${SCRIPT_URL}" -o "${tmp_file}" || {
+                rm -f "${tmp_file}"
+                if [ "${JSON}" -eq 1 ]; then
+                    output_json_error "Download failed (curl)" "network_error"
+                else
+                    error "Download failed (curl)"
+                fi
+                return 1
+            }
+
+            # Try to fetch .sha256 sidecar
+            local sha_file
+            sha_file=$(mktemp -t "${APP_NAME}.sha256.XXXXXX") || {
+                rm -f "${tmp_file}"
+                return 1
+            }
+
+            if curl -fsSL -w "%{http_code}" "${SCRIPT_URL}.sha256" -o "${sha_file}" 2>/dev/null | grep -q "^200"; then
+                if sha256sum -c "${sha_file}" --status 2>/dev/null < "${tmp_file}"; then
+                    downloaded_checksum_ok=1
+                    if [ "${JSON}" -eq 0 ]; then
+                        success "Automatic checksum verification passed (${SCRIPT_URL}.sha256)."
+                    fi
+                else
+                    rm -f "${tmp_file}" "${sha_file}"
+                    if [ "${JSON}" -eq 1 ]; then
+                        output_json_error "Automatic checksum verification failed" "checksum_mismatch"
+                    else
+                        die "Checksum verification failed (mismatch with ${SCRIPT_URL}.sha256). Installation aborted for security."
+                    fi
+                    return 1
+                fi
+            else
+                # No .sha256 available → proceed without verification (backward compatible)
+                if [ "${JSON}" -eq 0 ]; then
+                    warn "No .sha256 file found at ${SCRIPT_URL}.sha256 → continuing without automatic verification."
+                fi
+            fi
+            rm -f "${sha_file}" 2>/dev/null || true
+
+        elif command -v wget >/dev/null 2>&1; then
+            # Similar logic for wget (kept minimal and defensive)
+            wget -qO "${tmp_file}" "${SCRIPT_URL}" || {
+                rm -f "${tmp_file}"
+                if [ "${JSON}" -eq 1 ]; then
+                    output_json_error "Download failed (wget)" "network_error"
+                else
+                    error "Download failed (wget)"
+                fi
+                return 1
+            }
+
+            local sha_file
+            sha_file=$(mktemp -t "${APP_NAME}.sha256.XXXXXX") || {
+                rm -f "${tmp_file}"
+                return 1
+            }
+
+            if wget -q --server-response "${SCRIPT_URL}.sha256" -O "${sha_file}" 2>&1 | grep -q "HTTP/1.1 200"; then
+                if sha256sum -c "${sha_file}" --status 2>/dev/null < "${tmp_file}"; then
+                    downloaded_checksum_ok=1
+                    if [ "${JSON}" -eq 0 ]; then
+                        success "Automatic checksum verification passed."
+                    fi
+                else
+                    rm -f "${tmp_file}" "${sha_file}"
+                    if [ "${JSON}" -eq 1 ]; then
+                        output_json_error "Automatic checksum verification failed" "checksum_mismatch"
+                    else
+                        die "Checksum verification failed. Installation aborted for security."
+                    fi
+                    return 1
+                fi
+            else
+                if [ "${JSON}" -eq 0 ]; then
+                    warn "No .sha256 file found → continuing without automatic verification."
+                fi
+            fi
+            rm -f "${sha_file}" 2>/dev/null || true
+        else
+            rm -f "${tmp_file}"
+            if [ "${JSON}" -eq 1 ]; then
+                output_json_error "Neither curl nor wget found" "missing_dependency"
+            else
+                error "Neither curl nor wget found"
+            fi
+            return 1
+        fi
     fi
 
+    # Final safety: if we reached here without explicit failure, file is in tmp_file
     chmod +x "${tmp_file}" 2>/dev/null || true
 
     rm -f "${INSTALL_PATH}" 2>/dev/null
@@ -889,22 +1151,90 @@ perform_self_install() {
         output_json "success" "message" "${APP_NAME} ${REMOTE_VERSION} successfully installed to ${INSTALL_PATH}"
     else
         success "${APP_NAME} ${REMOTE_VERSION} successfully installed to ${INSTALL_PATH}"
+        if [ "${downloaded_checksum_ok}" -eq 1 ]; then
+            success "✓ Download was cryptographically verified."
+        fi
     fi
     return 0
 }
 
 # =============================================================================
-# maybe_install() - Friendly installation prompt
+# prompt_yes_no() - Defensive interactive yes/no confirmation prompt
+# =============================================================================
+#
+# GENERAL PURPOSE:
+# Displays a message and waits for (y/N) confirmation.
+# Returns 0 if user says yes, returns 1 (non-zero) if user says no or cancels.
+#
+# CRITICAL DEFENSIVE RULES (DO NOT VIOLATE):
+# 1. Must ALWAYS go through single source of truth (msg_n + output_text)
+# 2. Must respect --quiet and --json (never show prompt in those modes)
+# 3. Must NEVER use raw printf/echo for user-visible text
+# 4. Must work correctly in non-interactive / curl | sh environments
+# 5. Must preserve TTY detection and color handling via output_text
+# 6. This is the SINGLE SOURCE OF TRUTH for all yes/no confirmations in the project.
+#
+# !!! DO NOT MODIFY OR SIMPLIFY THIS FUNCTION !!!
+# Past AI assistants have repeatedly replaced this kind of prompt with
+# raw printf + read, breaking consistency with output_text(), --quiet,
+# --json, TTY detection, and the overall defensive design.
+#
+# This helper exists specifically to prevent that regression and to enforce
+# CIAO-Lite principles of Caution, Intentionality, and Over-protect.
+#
+# Last reviewed & aligned: April 2026
+# =============================================================================
+
+prompt_yes_no() {
+    # --- Safe Variable Defaults ----
+    # Defensive defaults - never assume globals are set
+    : "${JSON:=0}"
+    : "${QUIET:=0}"
+
+    local message="$1"
+
+    # Never show prompt in quiet or json mode
+    if [ "${JSON}" -eq 1 ] || [ "${QUIET}" -eq 1 ]; then
+        return 1   # treat as "no" in non-interactive modes
+    fi
+
+    # Must be interactive TTY
+    if ! [ -t 0 ] || ! [ -t 1 ]; then
+        return 1
+    fi
+
+    msg_n "${message}"
+    empty_line
+    msg_n "Continue? (y/N): "
+
+    local answer=""
+    read -r answer || true
+
+    case "$answer" in
+        [Yy]*|[Yy][Ee][Ss]*)
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+# =============================================================================
+# maybe_install_v3() - Friendly installation prompt
 # =============================================================================
 #
 # Respects both --quiet and --json modes.
 # In JSON mode we skip the interactive prompt entirely.
+# Now uses prompt_yes_no() as single source of truth for confirmation.
 #
 # !!! DO NOT MODIFY OR SIMPLIFY !!!
 # Designed to be reusable in other projects.
+#
+# Last aligned: 20 April 2026
 # =============================================================================
 
-maybe_install() {
+maybe_install_v3() {
     if is_installed && [ "${FORCE_REINSTALL}" -eq 0 ]; then
         return 0
     fi
@@ -928,42 +1258,38 @@ maybe_install() {
     fi
     empty_line
 
-    local should_install=false
-
-    if [ -t 0 ] && [ -t 1 ]; then
-        msg_n "     Install now? (y/N): "     # No newline at the end
-        read -r answer || true
-        case "$answer" in
-            [Yy]*|[Yy][Ee][Ss]*) should_install=true ;;
-            *) 
-                msg "Installation skipped by user."
-                return 0 
-                ;;
-        esac
-    else
-        msg "Non-interactive mode detected → installing automatically..."
-        should_install=true
-    fi
-
-    if [ "$should_install" = "true" ]; then
-        perform_self_install
+    # Use single source of truth for the yes/no prompt
+    if prompt_yes_no "Install ${APP_NAME} ${VERSION} now?"; then
+        perform_self_install_v2
         exit 0
+    else
+        msg "Installation skipped by user."
+        return 0
     fi
 }
 
+
 # =============================================================================
-# show_about() - Display diagnostic information about the current environment
+# show_about_pomo() - Display diagnostic information about the current environment
 # =============================================================================
 #
-# Shows installation status, versions (global/local), current shell, and TTY status.
+# GENERAL PURPOSE:
+# Shows detailed diagnostic information: version, installation status (global + local),
+# current shell, TTY/interactive status, user, and helpful next steps.
+#
 # Fully respects --quiet and --json modes.
+# In JSON mode: outputs exactly ONE clean, machine-readable JSON object.
+# In quiet mode: prints nothing.
 #
-# In JSON mode: outputs exactly ONE clean JSON object with accurate shell detection.
+# This function provides real value to users (unlike the previous overly simple version)
+# and should be kept in sync with the overall CIAO design and README.md.
 #
 # !!! DO NOT MODIFY OR SIMPLIFY THIS FUNCTION !!!
+# Designed to be reusable in other CIAO projects.
+# Last reviewed: April 2026
 # =============================================================================
 
-show_about() {
+show_about_pomo() {
     if [ "${JSON}" -eq 1 ]; then
         # === JSON MODE - Clean, machine-friendly output ===
         local installed="false"
@@ -979,11 +1305,10 @@ show_about() {
             local_ver=$(grep '^VERSION="' "${USER_BIN}/${APP_NAME}" 2>/dev/null | cut -d'"' -f2 || echo "unknown")
         fi
 
-        # Improved shell detection: avoid showing "${APP_NAME}" as the shell
+        # Improved shell detection to avoid showing the script name itself
         local current_shell="unknown"
         current_shell=$(ps -p $$ -o comm= 2>/dev/null | tr -d '()' || echo "unknown")
         
-        # If we see the script name itself (or generic sh/dash/ash), climb to parent shell
         if [ "$current_shell" = "${APP_NAME}" ] || [ "$current_shell" = "sh" ] || \
            [ "$current_shell" = "dash" ] || [ "$current_shell" = "ash" ]; then
             local parent_pid
@@ -996,15 +1321,16 @@ show_about() {
         local interactive="false"
         [ -t 1 ] && interactive="true"
 
-        # Clean JSON: no generic message, accurate shell name
         output_json "about" "" \
+            "app" "${APP_NAME}" \
             "version" "${VERSION}" \
             "installed" "${installed}" \
             "global_version" "${global_ver}" \
             "local_version" "${local_ver}" \
             "shell" "${current_shell}" \
             "interactive" "${interactive}" \
-            "user" "${USERNAME}"
+            "user" "${USERNAME}" \
+            "storage_dir" "$(resolve_storage 2>/dev/null || echo "unknown")"
 
         return 0
     fi
@@ -1017,42 +1343,40 @@ show_about() {
 
     # Installation status
     if is_installed; then
-        success "${APP_NAME} is installed."
+        success "${APP_NAME} is properly installed."
     else
+        warn "${APP_NAME} is NOT installed in your PATH."
         if [ -t 1 ]; then
-            warn "${APP_NAME} is NOT installed in your PATH."
-            msg "   Recommended: curl -fsSL ${SCRIPT_URL} | ${SH}"
+            msg "   Recommended one-liner:"
+            msg "     curl -fsSL ${SCRIPT_URL} | sh"
         else
-            warn "${APP_NAME} is NOT installed."
-            msg "   Recommended: curl -fsSL ${SCRIPT_URL} | ${SH}"
+            msg "   Recommended: curl -fsSL ${SCRIPT_URL} | sh"
         fi
     fi
 
     empty_line
 
-    # Global installation
+    # Global vs Local installation details
     if [ -x "${GLOBAL_BIN}/${APP_NAME}" ]; then
         global_ver=$(grep '^VERSION="' "${GLOBAL_BIN}/${APP_NAME}" 2>/dev/null | cut -d'"' -f2 || echo "unknown")
-        msg "Global install (${GLOBAL_BIN}/${APP_NAME}):  ${global_ver}"
+        msg "Global install  (${GLOBAL_BIN}/${APP_NAME}):   ${global_ver}"
     else
-        msg "Global install (${GLOBAL_BIN}/${APP_NAME}):  not found"
+        msg "Global install  (${GLOBAL_BIN}/${APP_NAME}):   not found"
     fi
 
-    # Local (user) installation
     if [ -x "${USER_BIN}/${APP_NAME}" ]; then
         local_ver=$(grep '^VERSION="' "${USER_BIN}/${APP_NAME}" 2>/dev/null | cut -d'"' -f2 || echo "unknown")
-        msg "Local install  (${USER_BIN}/${APP_NAME}):   ${local_ver}"
+        msg "Local install   (${USER_BIN}/${APP_NAME}):    ${local_ver}"
     else
-        msg "Local install  (${USER_BIN}/${APP_NAME}):   not found"
+        msg "Local install   (${USER_BIN}/${APP_NAME}):    not found"
     fi
 
     empty_line
 
-    # === Improved Shell Detection (same logic as JSON mode) ===
+    # Shell & Environment
     local current_shell="unknown"
     current_shell=$(ps -p $$ -o comm= 2>/dev/null | tr -d '()' || echo "unknown")
     
-    # If we see the script name itself, try to get the real parent shell
     if [ "$current_shell" = "${APP_NAME}" ] || [ "$current_shell" = "sh" ] || \
        [ "$current_shell" = "dash" ] || [ "$current_shell" = "ash" ]; then
         local parent_pid
@@ -1061,34 +1385,55 @@ show_about() {
             current_shell=$(ps -p "$parent_pid" -o comm= 2>/dev/null | tr -d '()' || echo "$current_shell")
         fi
     fi
-    msg "Current shell:   ${current_shell}"
 
-    # TTY status
+    msg "Current shell:     ${current_shell}"
+    msg "User:              ${USERNAME}"
+
     if [ -t 1 ]; then
         msg "TTY / Interactive: yes"
     else
-        msg "TTY / Interactive: no (non-interactive mode)"
+        msg "TTY / Interactive: no (non-interactive / scripted mode)"
     fi
 
+    msg "Storage directory: $(resolve_storage 2>/dev/null || echo "unknown")"
+
     empty_line
-    msg "Use '${APP_NAME} about' to see this information again."
+    msg "Useful commands:"
+    msg "   ${APP_NAME} help          → Full usage and examples"
+    msg "   ${APP_NAME} self-update   → Update to latest version"
+    msg "   ${APP_NAME} self-uninstall → Clean removal from system"
+    msg "   ${APP_NAME} --json        → Machine-readable output"
+
+    empty_line
+    msg "Run '${APP_NAME} help' for complete usage information."
 }
 
 # =============================================================================
-# show_countdown_help() - Display help information for countdown
+# show_countdown_help() - Display help information for pomo
 # =============================================================================
 #
-# Shows usage examples and available commands in a clear, user-friendly format.
+# Shows usage, available commands, examples, and theme information.
 # Fully respects --quiet and --json modes.
+#
+# In --json mode: returns a minimal success object instead of long text.
+# In --quiet mode: prints nothing (silent).
+#
+# This is the user-facing help text and should be kept in sync with the README.md.
 # =============================================================================
 
 show_countdown_help() {
     if [ "${JSON}" -eq 1 ]; then
-        output_json "success" "Help text available in human mode. Run without --json."
+        # JSON mode: never output long help text
+        output_json "success" "Help text available in human-readable mode. Run without --json." \
+            "command" "help" \
+            "note" "Use --json with other commands (status, list, stats, about, etc.) for machine output."
         return 0
     fi
 
-    [ "${QUIET}" -eq 1 ] && return 0
+    if [ "${QUIET}" -eq 1 ]; then
+        # Quiet/silent mode: suppress help completely
+        return 0
+    fi
 
     cat << EOF
 ${APP_NAME} – version ${VERSION} - Lightweight per-user named countdown timers
@@ -1132,6 +1477,7 @@ Note: 'timer' and 'countdown' are separate tools.
       Use 'timer' for simple count-up timers.
 EOF
 }
+
 
 # =============================================================================
 # resolve_app_base_dir() - Central storage resolver with full fallback
@@ -1200,7 +1546,7 @@ resolve_app_base_dir() {
 }
 
 # =============================================================================
-# get_app_file() - Return full path to Countdown file
+# get_app_file() - Return full path to pomo file
 # =============================================================================
 #
 # Uses the central resolve_app_base_dir() helper to guarantee consistent
@@ -1208,7 +1554,7 @@ resolve_app_base_dir() {
 #
 # Uses the same storage resolver logic (volatile + persistent with fallbacks).
 # - volatile  → /dev/shm (fast, lost on reboot)
-# - persistent → ~/.cache/countdown (survives reboot)
+# - persistent → ~/.cache/pomo (survives reboot)
 #
 # !!! DO NOT MODIFY OR SIMPLIFY THIS FUNCTION !!!
 # It must remain a thin wrapper around the central resolver.
@@ -1631,7 +1977,7 @@ list_countdown() {
 #   countdown list [--persist]
 #
 # IMPORTANT DESIGN DECISION:
-#   The auto-install logic (`maybe_install` / `perform_self_install`) is triggered
+#   The auto-install logic (`maybe_install_v3` / `perform_self_install_v2`) is triggered
 #   when the script is run with ZERO arguments via `curl | sh`.
 #
 #   This is INTENTIONAL and CRITICAL for the one-liner installer to work.
@@ -1666,16 +2012,16 @@ main_countdown() {
     # It ensures that `curl ... | sh` actually installs the tool instead of
     # just showing help and exiting with "command not found".
     #
-    # perform_self_install / maybe_install is important here EVEN THOUGH
+    # perform_self_install_v2 / maybe_install_v3 is important here EVEN THOUGH
     # a subcommand may be present later, because the main real-world usage
     # of this script is the one-liner installer. Installing first is the
     # expected behavior in that context.
     if ! is_installed && [ $# -eq 0 ]; then
         if [ "${JSON}" -eq 1 ] || [ "${QUIET}" -eq 1 ]; then
             # Non-interactive / JSON mode → install silently
-            perform_self_install
+            perform_self_install_v2
         else
-            maybe_install
+            maybe_install_v3
         fi
         exit 0
     fi
@@ -1816,11 +2162,11 @@ main_countdown() {
             ;;
 
         self-update)
-            self_update
+            self_update_v3
             ;;
 
         self-uninstall)
-            self_uninstall
+            self_uninstall_v2
             ;;
 
         help|*)

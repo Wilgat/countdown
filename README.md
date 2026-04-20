@@ -1,6 +1,6 @@
 # countdown
 
-[![Version](https://img.shields.io/badge/Version-1.0.1-blue?style=flat-square)](https://github.com/Wilgat/countdown)
+[![Version](https://img.shields.io/badge/Version-1.0.3-blue?style=flat-square)](https://github.com/Wilgat/countdown)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 
 **Lightweight, per-user named countdown timers** for the terminal.  

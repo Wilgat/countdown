@@ -1,6 +1,6 @@
 #!/bin/sh
 # =============================================================================
-# countdown – version 1.0.3
+# countdown – version 1.0.4
 # =============================================================================
 #
 # Lightweight per-user named countdown timers (volatile in RAM or persistent).
@@ -84,7 +84,7 @@
 
 # ----------------------------- Project Constants -----------------------------
 APP_NAME="countdown"           # ← HARDCODED - Required for curl | sh install
-VERSION="1.0.3"
+VERSION="1.0.4"
 DESCRIPTION="Lightweight per-user named countdown timers"
 REMOTE_VERSION=$VERSION
 SH=sh
@@ -1182,7 +1182,7 @@ perform_self_install_v2() {
 # This helper exists specifically to prevent that regression and to enforce
 # CIAO-Lite principles of Caution, Intentionality, and Over-protect.
 #
-# Last reviewed & aligned: April 2026
+# Last reviewed & aligned: 2 April 2026
 # =============================================================================
 
 prompt_yes_no() {
@@ -1203,9 +1203,7 @@ prompt_yes_no() {
         return 1
     fi
 
-    msg_n "${message}"
-    empty_line
-    msg_n "Continue? (y/N): "
+    msg_n "${message} (y/N)? "
 
     local answer=""
     read -r answer || true

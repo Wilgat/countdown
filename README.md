@@ -1,6 +1,6 @@
 # countdown
 
-![Version](https://img.shields.io/badge/Version-1.0.3-blue?style=flat-square)
+![Version](https://img.shields.io/badge/Version-1.0.4-blue?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 [![CIAO](https://img.shields.io/badge/Philosophy-CIAO%20(Caution%20%E2%80%A2%20Intentional%20%E2%80%A2%20Anti--fragile%20%E2%80%A2%20Over--protect)-purple.svg)](https://github.com/cloudgen/ciao)
 [![Shell](https://img.shields.io/badge/Shell-POSIX%20sh-orange?style=flat-square)]()
@@ -33,7 +33,7 @@ Extremely robust, zero dependencies, and built with a strong defensive philosoph
 
 ---
 
-## 🔐 Security – Checksum Verification (v1.0.3+)
+## 🔐 Security – Checksum Verification (v1.0.4+)
 
 ```sh
 # Recommended: Pin exact version with checksum

@@ -6,6 +6,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [1.1.0] - 2026-07-14
+
+### Added
+- Full Type 0 self-management surface from the **timer** bootstrap architecture: `install`, `version-check`, `self-update`, `self-uninstall`, `about`, empty-argv install-ensure
+- Automatic companion-digest verification (`countdown.sha256` / `${SCRIPT_URL}.sha256`) aligned with timer Type 0 pattern
+- Domain duration helpers (`countdown_parse_duration`, `countdown_looks_like_duration`) under `countdown_*` prefix
+- Local test suite (`tests/`) specialized for countdown
+
+### Changed
+- Ship unit rebuilt as bootstrap specialize **timer (A) → countdown (B)** — same `out_*` / `inst_*` / `app_*` structure as timer, while keeping countdown domain CLI
+- Product identity SSOT: `APP_NAME=countdown`, `REPO_NAME=countdown`, channel `https://raw.githubusercontent.com/Wilgat/countdown/main/countdown`
+- Version **1.1.0** (minor line after 1.0.4: architecture bootstrap refresh + preserved countdown domain semantics)
+- README / requirements Implementation Notes retargeted to countdown
+
+### Preserved (domain oracle: classic countdown 1.0.4)
+- Named countdowns with required human duration on `start`
+- Remaining-time `status` / `stop` (not count-up elapsed)
+- Volatile + `--persist` storage with fallbacks
+- JSON codes such as `missing_duration`, `invalid_duration`, `no_countdown`, `already_running`
+
+### Security
+- Regenerated `countdown.sha256` for the refreshed ship unit
+
+---
+
 ## [1.0.4] - 2026-04-22
 
 ### Added

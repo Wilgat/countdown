@@ -80,6 +80,10 @@ obj/
 .eslintcache
 .stylelintcache
 *.tsbuildinfo
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
 # --- shell / local run debris ---
 *.YYYYMMDD-*.bak

@@ -2,18 +2,21 @@
 
 **Product:** countdown (POSIX `/bin/sh` Type 0 self-install / self-maintenance CLI)  
 **Workspace state:** Specialized product law (not blank genesis).  
-**Updated:** 2026-07-14
+**Updated:** 2026-07-19  
+**Domain SSOT:** `requirement-shell-domain` (single current domain law — see that file §2.1; **not** required at genesis template)
 
 | ID / key | Title | Area | Status | Path | Updated |
 |----------|-------|------|--------|------|---------|
+| requirement-bootstrap-chain | Bootstrap chain (lineage hops, direction A→B, shared vs domain defect ownership) | architecture | Active | `requirement-bootstrap-chain.md` | 2026-07-15 |
+| requirement-shell-domain | **Domain SSOT** — specialized CLI subcommands, features, help items, about items | domain | Active | `requirement-shell-domain.md` | 2026-07-16 |
 | requirement-shell-automatic-checksum | Automatic companion-digest integrity (transparent link/value/result; CHECKSUM not help/about) | shell | Active | `requirement-shell-automatic-checksum.md` | 2026-07-14 |
-| requirement-shell-cli-interface | Shell CLI interface (commands, flags, dispatch, modes) | shell | Active | `requirement-shell-cli-interface.md` | 2026-07-14 |
+| requirement-shell-cli-interface | Shell CLI interface (commands, flags, dispatch, modes) | shell | Active | `requirement-shell-cli-interface.md` | 2026-07-19 |
 | requirement-shell-cli-zero-arguments | Empty argv Type O install-ensure (not installed / local / global) | shell | Active | `requirement-shell-cli-zero-arguments.md` | 2026-07-14 |
 | requirement-shell-idempotency | Shell idempotency / re-run safety for ensure-style ops | shell | Active | `requirement-shell-idempotency.md` | 2026-07-14 |
 | requirement-shell-interactive-vs-noninteractive | Interactive vs non-interactive / `curl\|sh` behavior | shell | Active | `requirement-shell-interactive-vs-noninteractive.md` | 2026-07-14 |
 | requirement-shell-modular-function-design | Single-file modular function design (prefixes, zones) | shell | Active | `requirement-shell-modular-function-design.md` | 2026-07-14 |
 | requirement-shell-output-requirements | Central `out_*` output SSOT (stdout/stderr, modes) | shell | Active | `requirement-shell-output-requirements.md` | 2026-07-14 |
-| requirement-shell-self-management | Self-management lifecycle (version-check, update, uninstall, about) | shell | Active | `requirement-shell-self-management.md` | 2026-07-14 |
+| requirement-shell-self-management | Self-management lifecycle (version-check, update, uninstall, about) | shell | Active | `requirement-shell-self-management.md` | 2026-07-19 |
 
 **Rules for agents:**
 

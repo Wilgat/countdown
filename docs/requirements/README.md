@@ -2,7 +2,7 @@
 
 Authoritative product and engineering requirements for this project live here.
 
-**Current state (2026-07-14 — countdown specialization from timer bootstrap):** **Eight** live `requirement-shell-*.md` files (automatic-checksum, CLI interface, CLI zero-arguments, idempotency, interactive vs noninteractive, modular design, output, self-management). Status **Active**; versions per file header (most v1.0.0; `requirement-shell-cli-zero-arguments` **v1.1.0** Type O). Registry: `index.md` (must stay in sync). This set is **sufficient product law** for the current Type 0 self-install/self-maintenance surface (no Type 1/2); online-install behavior is covered by composition (zero-arguments + CLI + checksum + self-management + interactive + idempotency), not a ninth umbrella file. Do **not** invent additional requirement paths without a real ownership gap — verify on disk and register new files in `index.md` in the same change.
+**Current state (2026-07-19 — countdown specialization from timer bootstrap):** **Ten** live requirements: **eight** Type 0 / structure `requirement-shell-*` files; **`requirement-shell-domain`** (**single current domain SSOT** — specialized subcommands, features, help items, about items); **`requirement-bootstrap-chain`** (lineage). Registry: `index.md` (must stay in sync). **Domain SSOT exception:** not required at **genesis template**. Do **not** invent parallel Active domain law files without superseding the current domain SSOT.
 
 ## Purpose
 

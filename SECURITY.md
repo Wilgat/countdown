@@ -4,14 +4,15 @@
 
 | Version | Supported |
 |---------|-----------|
-| 1.1.0 (current) | Yes |
+| 1.1.1 (current) | Yes |
+| 1.1.0 | Best-effort; please upgrade when possible |
 | Older releases | Best-effort only; please upgrade to the current version when possible |
 
 ## Reporting a Vulnerability
 
 Please **do not** open a public issue for security-sensitive reports when a private channel is available.
 
-**Maintainer contact (email):** `wigat.wong@gmail.com`
+**Maintainer contact (email):** `wilgat.wong@gmail.com`
 
 - Source of contact: product **author-email** SSOT in [`LICENSE`](./LICENSE) (Copyright line).
 - Prefer email for vulnerability details, reproduction steps, and impact.

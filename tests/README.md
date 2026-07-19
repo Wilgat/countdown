@@ -30,6 +30,10 @@ APP_NAME=countdown ./tests/run.sh
 
 Type 0 cases map to live `docs/requirements/requirement-shell-*.md` (CLI interface, zero-arguments, output, interactive, idempotency, self-management, automatic-checksum). Domain cases cover specialized countdown commands on top of that architecture.
 
+## Mapping (public reviews)
+
+Review-driven cases and open TODOs live under [`../reviews/test-plan.md`](../reviews/test-plan.md) (TP-* rows). Prior failure modes that tests should lock: [`../reviews/lessons.md`](../reviews/lessons.md).
+
 ## Network / safety
 
 - No secrets and no root.

@@ -145,7 +145,7 @@ function_name() {
 | **Product / binary** | `countdown` (`APP_NAME`) |
 | **Single shipped script** | Repo root `./countdown` (~2.9k lines, `#!/bin/sh`) |
 | **`src/` directory** | **Not used** for runtime — single-file ship unit only |
-| **Domain prefix `countdown_*`** | **In use** — named-countdown domain ops (`start` / `stop` / `status` / `list` / kill-or-reset; duration parse) |
+| **Domain prefix `countdown_*`** | **In use** — named-countdown domain ops; **behavior SSOT** = `requirement-shell-domain.md` (not this modular file) |
 | **Bootstrap** | Always `app_main "$@"` at end of script — **no** `${0##*/}` / `APP_NAME` basename gate (required for `curl \| sh`; INC-20260712-001) |
 
 #### Live prefix inventory (authoritative categories)

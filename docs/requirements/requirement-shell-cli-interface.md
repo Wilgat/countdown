@@ -82,7 +82,7 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 | **Primary executable** | Repo root `./countdown` (POSIX `/bin/sh`, single-file for `curl \| sh`) |
 | **Dispatcher** | `app_main` (always invoked at end of script: `app_main "$@"` — no `${0##*/}` / APP_NAME basename gate; required for `curl \| sh`) |
 | **Output SSOT** | `out_text` + wrappers (`out_info`, `out_success`, `out_warn`, `out_error`, `out_die`, `out_plain`, `out_json`, …) |
-| **Version SSOT** | `VERSION` in script config block (product SSOT; currently `VERSION="2.9.0"`) |
+| **Version SSOT** | `VERSION` in script config block (product SSOT; currently `VERSION="1.1.1"`) |
 | **Install paths** | Global: `GLOBAL_BIN` default `/usr/local/bin`; User: `USER_BIN` default `${HOME}/.local/bin` |
 | **Remote channel env (help surface)** | `REPO_USER` / `REPO_NAME` (defaults `Wilgat` / `countdown`); `SCRIPT_URL` composed default `https://raw.githubusercontent.com/${REPO_USER}/${REPO_NAME}/main/${APP_NAME}` (literal product default: `https://raw.githubusercontent.com/Wilgat/countdown/main/countdown`; override via env). **`help` / `about` MUST list these operator channel vars as designed — MUST NOT list `CHECKSUM`** (install-path runtime pin only; see `requirement-shell-automatic-checksum.md`) |
 | **Type 1 / Type 2 commands** | **None** on current surface — this tool is CLI lifecycle only |
@@ -118,11 +118,12 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 4. Help text **must** stay aligned with that table (no orphan commands, no listed-but-unrouted commands).  
 5. User-facing strings **must not** use raw `echo`/`printf` outside the `out_*` system (protected low-level helpers excepted only if already CIAO-marked and not for general messages).
 
-#### Explicitly out of scope until a new requirement
+#### Explicitly out of scope of *this* Type 0 interface file
 
 - Type 1: `prerequisites`, `create-user`, Docker host install, etc.  
-- Type 2: app `start`/`stop`/`configure` under a system user  
-- Domain product subcommands unrelated to CLI lifecycle  
+- Type 2: app host `start`/`stop`/`configure` under a system user  
+
+**Domain product subcommands** (countdown start/stop/status/list/kill/reset, duration, persist): owned by the **current domain SSOT** — `docs/requirements/requirement-shell-domain.md` (not duplicated as full catalog here). Dispatcher **must** still route them; help/about domain items follow that SSOT.
 
 ### 2.7 Why This Requirement Exists (Direct CIAO Alignment)
 

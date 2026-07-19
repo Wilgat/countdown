@@ -6,6 +6,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [1.1.1] - 2026-07-19
+
+### Fixed
+- JSON `already_running` and related domain errors emit on stderr via `out_json_error` (stdout stays clean for pipelines)
+- Per-user private volatile/persist storage under `/dev/shm` and `/tmp` (no flat world-writable files)
+- `inst_get_version` prefers user-local install when present (non-root)
+- PATH cleanup no longer blanket-deletes unrelated `.local/bin` lines
+- Exclusive countdown create (`set -C`) and fail-closed remove on stop/kill
+- Stronger JSON escape (controls/newlines); reject CR/LF in countdown names
+- wget companion-digest HTTP status match accepts HTTP/1.x family
+- `list` rejects free name tokens (use `status <name>`)
+- Non-numeric countdown state fails closed as corrupted data
+
+### Changed
+- Documented **domain SSOT** (`requirement-shell-domain`) and **bootstrap chain** product law
+- README integrity section leads with **automatic** companion verification; explicit `CHECKSUM` pin is Advanced/CI
+- Author-email SSOT aligned to `wilgat.wong@gmail.com` (LICENSE / SECURITY / README / ship unit)
+- Public `reviews/` surface (plans, lessons, hop reports) for product and bootstrap chain
+
+### Security
+- Regenerated `countdown.sha256` for **1.1.1**
+
+---
+
 ## [1.1.0] - 2026-07-14
 
 ### Added

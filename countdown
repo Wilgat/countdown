@@ -28,7 +28,7 @@
 #   Override SCRIPT_URL with env for a full custom channel; or override REPO_* before first use
 #   so the composed default follows a fork. Empty SCRIPT_URL disables version-check / self-update network steps.
 #
-# Author: Wilgat Wong <wigat.wong@gmail.com>
+# Author: Wilgat Wong <wilgat.wong@gmail.com>
 #
 # =============================================================================
 
@@ -42,9 +42,9 @@ set -u  # Treat unset variables as error (defensive)
 : "${APP_DESC:=Lightweight per-user named countdown timers (volatile or persistent)}"
 : "${SHORT_DESCRIPTION:=${APP_DESC}}"
 : "${DESCRIPTION:=POSIX /bin/sh Type 0 CLI: install, version-check, self-update, self-uninstall, about, plus countdown start/stop/status/list with duration.}"
-# Product version SSOT (specialized 1.1.0 from timer architecture + countdown domain). Extractors use: grep '^VERSION="'
-VERSION="1.1.0"
-: "${VERSION:=1.1.0}"
+# Product version SSOT (specialized 1.1.1 from timer architecture + countdown domain). Extractors use: grep '^VERSION="'
+VERSION="1.1.1"
+: "${VERSION:=1.1.1}"
 
 # Runtime flags (safe defaults)
 : "${QUIET:=0}"
@@ -398,8 +398,18 @@ out_double_line() { out_text plain "============================================
 # GENERAL PURPOSE: Prevent broken machine JSON when values contain " or \.
 # Class B helper used only by out_json / out_json_error (not a product message).
 util_json_escape() {
-    # shellcheck disable=SC2001
-    printf '%s' "${1-}" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g'
+    # Escape \, ", and common controls so JSON cannot be broken by newlines/tabs (L-06).
+    # awk is POSIX; multi-line values become \n between physical lines.
+    printf '%s' "${1-}" | awk '
+    {
+      line = $0
+      gsub(/\\/, "\\\\", line)
+      gsub(/"/, "\\\"", line)
+      gsub(/\t/, "\\t", line)
+      gsub(/\r/, "\\r", line)
+      if (NR > 1) printf "\\n"
+      printf "%s", line
+    }'
 }
 
 out_json() {
@@ -811,7 +821,7 @@ inst_perform_install_download_without_checksum() {
             return 1
         fi
 
-        if wget -q --server-response "${SCRIPT_URL}.sha256" -O "${sha_file}" 2>&1 | grep -q "HTTP/1.1 200"; then
+        if wget -q --server-response "${SCRIPT_URL}.sha256" -O "${sha_file}" 2>&1 | grep -qE "HTTP/[0-9.]+ 200"; then
             local expected actual
             expected=$(awk 'NF { print $1; exit }' "${sha_file}" 2>/dev/null)
             actual=$(util_sha256_file "${tmp_file}") || actual=""
@@ -1300,7 +1310,6 @@ inst_self_uninstall_cleanup_path() {
             if sed -i.bak \
                 -e '/# Added by .* installer/d' \
                 -e "\|${escaped_bin}|d" \
-                -e '/\.local\/bin/d' \
                 "$config" 2>/dev/null; then
                 cleaned=1
             fi
@@ -1389,17 +1398,28 @@ inst_is_installed() {
 
 inst_get_version() {
     # --- Safe Variable Defaults ----
-    # Defensive defaults - never assume globals are set
+    # Align with util_get_install_bin_path: non-root prefers user-local when present (L-03).
     : "${APP_NAME:=app}"
     : "${IS_ROOT:=0}"
+    : "${HOME:=/tmp}"
     : "${GLOBAL_BIN:=/usr/local/bin}"
     : "${USER_BIN:=${HOME}/.local/bin}"
+    : "${FORCE_USER:=0}"
+    : "${FORCE_GLOBAL:=0}"
 
-    local bin_path
-    if [ "$IS_ROOT" -eq 1 ] || [ -x "${GLOBAL_BIN}/${APP_NAME}" ]; then
+    local bin_path=""
+    if [ "${FORCE_USER}" -eq 1 ]; then
+        bin_path="${USER_BIN}/${APP_NAME}"
+    elif [ "${FORCE_GLOBAL}" -eq 1 ] || [ "${IS_ROOT}" -eq 1 ] || [ "$(id -u)" -eq 0 ]; then
         bin_path="${GLOBAL_BIN}/${APP_NAME}"
     else
-        bin_path="${USER_BIN}/${APP_NAME}"
+        if [ -x "${USER_BIN}/${APP_NAME}" ]; then
+            bin_path="${USER_BIN}/${APP_NAME}"
+        elif [ -x "${GLOBAL_BIN}/${APP_NAME}" ]; then
+            bin_path="${GLOBAL_BIN}/${APP_NAME}"
+        else
+            bin_path="${USER_BIN}/${APP_NAME}"
+        fi
     fi
 
     if [ -x "$bin_path" ]; then
@@ -2253,19 +2273,29 @@ countdown_resolve_base_dir() {
     : "${PERSISTENT_DIR:=${XDG_CACHE_HOME:-${HOME}/.cache}/${APP_NAME}}"
 
     if [ "$requested_mode" = "volatile" ]; then
+        # Per-user private directory (L-02) — not flat files in world-writable /dev/shm|/tmp.
         if [ -d "$VOLATILE_DIR" ] && [ -w "$VOLATILE_DIR" ]; then
-            base_dir="$VOLATILE_DIR"
+            base_dir="${VOLATILE_DIR}/${APP_NAME}-${USERNAME}"
+            if ! mkdir -p "$base_dir" 2>/dev/null; then
+                out_die "Cannot create private volatile directory: $base_dir"
+            fi
+            chmod 700 "$base_dir" 2>/dev/null || true
         elif [ -d "/tmp" ] && [ -w "/tmp" ]; then
             actual_mode="fallback"
-            base_dir="/tmp"
+            base_dir="/tmp/${APP_NAME}-${USERNAME}"
+            if ! mkdir -p "$base_dir" 2>/dev/null; then
+                out_die "Cannot create private fallback directory: $base_dir"
+            fi
+            chmod 700 "$base_dir" 2>/dev/null || true
             if [ "${QUIET}" -eq 0 ] && [ "${JSON}" -eq 0 ]; then
-                out_warn "Volatile storage (/dev/shm) not available. Falling back to /tmp."
+                out_warn "Volatile storage (/dev/shm) not available. Falling back to private dir under /tmp."
             fi
         else
-            base_dir="/tmp/${APP_NAME}_${USERNAME}"
+            base_dir="/tmp/${APP_NAME}-${USERNAME}"
             if ! mkdir -p "$base_dir" 2>/dev/null || [ ! -w "$base_dir" ]; then
                 out_die "No writable temporary storage available (/dev/shm, /tmp). ${APP_NAME} cannot start."
             fi
+            chmod 700 "$base_dir" 2>/dev/null || true
             actual_mode="fallback"
             if [ "${QUIET}" -eq 0 ] && [ "${JSON}" -eq 0 ]; then
                 out_warn "Volatile storage unavailable. Using fallback directory: $base_dir"
@@ -2276,12 +2306,13 @@ countdown_resolve_base_dir() {
             base_dir="${PERSISTENT_DIR}"
             mkdir -p "$base_dir" 2>/dev/null || true
         else
-            base_dir="/tmp/${APP_NAME}_${USERNAME}_persistent"
+            base_dir="/tmp/${APP_NAME}-${USERNAME}-persistent"
             if ! mkdir -p "$base_dir" 2>/dev/null || [ ! -w "$base_dir" ]; then
-                out_die "No writable location for persistent storage (no usable \$HOME and cannot write to /tmp). ${APP_NAME} cannot continue."
+                out_die "No writable location for persistent storage (no usable $HOME and cannot write to /tmp). ${APP_NAME} cannot continue."
             fi
+            chmod 700 "$base_dir" 2>/dev/null || true
             if [ "${QUIET}" -eq 0 ] && [ "${JSON}" -eq 0 ]; then
-                out_warn "No usable \$HOME detected. Persistent countdowns will use fallback directory: $base_dir"
+                out_warn "No usable $HOME detected. Persistent countdowns will use fallback directory: $base_dir"
             fi
         fi
     fi
@@ -2301,6 +2332,15 @@ countdown_get_file() {
 
 countdown_sanitize_name() {
     : "${COUNTDOWN_NAME:=default}"
+    # Reject CR/LF without putting newline into case grammar (breaks dash case arms).
+    if [ "$(printf '%s' "$COUNTDOWN_NAME" | wc -c)" -ne "$(printf '%s' "$COUNTDOWN_NAME" | tr -d '\n\r' | wc -c)" ]; then
+        if [ "${JSON:-0}" -eq 1 ]; then
+            out_json_error "Invalid countdown name: contains forbidden characters" "invalid_name"
+        else
+            out_error "Invalid countdown name '${COUNTDOWN_NAME}' (contains forbidden characters)"
+        fi
+        exit 1
+    fi
     case "$COUNTDOWN_NAME" in
         "")
             COUNTDOWN_NAME="default"
@@ -2388,10 +2428,7 @@ countdown_start() {
 
     if [ -f "$COUNTDOWN_FILE" ]; then
         if [ "${JSON}" -eq 1 ]; then
-            out_json "error" "Countdown '${COUNTDOWN_NAME}' is already running." \
-                "code" "already_running" \
-                "name" "$COUNTDOWN_NAME" \
-                "mode" "$mode"
+            out_json_error "Countdown '${COUNTDOWN_NAME}' is already running." "already_running"
         else
             out_warn "Countdown '${COUNTDOWN_NAME}' is already running."
         fi
@@ -2401,7 +2438,16 @@ countdown_start() {
     start_time=$(date +%s)
     target_time=$((start_time + duration_seconds))
 
-    if ! printf '%s %s\n' "$start_time" "$target_time" > "$COUNTDOWN_FILE" 2>/dev/null; then
+    # Exclusive create (L-09): race on same name → already_running
+    if ! ( umask 077; set -C; printf '%s %s\n' "$start_time" "$target_time" > "$COUNTDOWN_FILE" ) 2>/dev/null; then
+        if [ -f "$COUNTDOWN_FILE" ]; then
+            if [ "${JSON}" -eq 1 ]; then
+                out_json_error "Countdown '${COUNTDOWN_NAME}' is already running." "already_running"
+            else
+                out_warn "Countdown '${COUNTDOWN_NAME}' is already running."
+            fi
+            exit 1
+        fi
         countdown_domain_fail "Cannot create countdown file" "io_error"
     fi
 
@@ -2434,6 +2480,8 @@ countdown_stop() {
     read -r start_time target_time < "$COUNTDOWN_FILE" 2>/dev/null || {
         countdown_domain_fail "Corrupted countdown file" "corrupted_data"
     }
+    case "${start_time}" in "" | *[!0-9]*) countdown_domain_fail "Corrupted countdown file" "corrupted_data" ;; esac
+    case "${target_time}" in "" | *[!0-9]*) countdown_domain_fail "Corrupted countdown file" "corrupted_data" ;; esac
 
     current_time=$(date +%s)
     remaining=$((target_time - current_time))
@@ -2446,7 +2494,12 @@ countdown_stop() {
         remaining=0
     fi
 
-    rm -f "$COUNTDOWN_FILE"
+    if ! rm -f "$COUNTDOWN_FILE" 2>/dev/null; then
+        countdown_domain_fail "Cannot remove countdown file (permission denied?)" "io_error"
+    fi
+    if [ -f "$COUNTDOWN_FILE" ]; then
+        countdown_domain_fail "Cannot remove countdown file (still present)" "io_error"
+    fi
 
     if [ "${JSON}" -eq 1 ]; then
         if [ "$remaining" -gt 0 ]; then
@@ -2531,7 +2584,12 @@ countdown_kill_or_reset() {
     if [ ! -f "$COUNTDOWN_FILE" ]; then
         countdown_domain_fail "No countdown '${COUNTDOWN_NAME}' running." "no_countdown"
     fi
-    rm -f "$COUNTDOWN_FILE"
+    if ! rm -f "$COUNTDOWN_FILE" 2>/dev/null; then
+        countdown_domain_fail "Cannot remove countdown file (permission denied?)" "io_error"
+    fi
+    if [ -f "$COUNTDOWN_FILE" ]; then
+        countdown_domain_fail "Cannot remove countdown file (still present)" "io_error"
+    fi
     if [ "$action" = "reset" ]; then
         if [ "${JSON}" -eq 1 ]; then
             out_json "success" "Countdown '${COUNTDOWN_NAME}' has been reset." "name" "$COUNTDOWN_NAME"
@@ -2635,7 +2693,7 @@ app_about() {
     : "${QUIET:=0}"
     : "${APP_NAME:=countdown}"
     # Version comes from global SSOT (VERSION="1.0.0" near top); default only if unset
-    : "${VERSION:=1.1.0}"
+    : "${VERSION:=1.1.1}"
     : "${GLOBAL_BIN:=/usr/local/bin}"
     : "${USER_BIN:=${HOME}/.local/bin}"
     : "${SCRIPT_URL:=}"
@@ -2753,7 +2811,7 @@ app_about() {
 
 app_version() {
     : "${APP_NAME:=countdown}"
-    : "${VERSION:=1.1.0}"
+    : "${VERSION:=1.1.1}"
     : "${JSON:=0}"
     if [ "${JSON}" -eq 1 ]; then
         # Same machine contract as historical app_main inline path
@@ -2803,7 +2861,7 @@ app_help() {
     out_plain "  start [--persist] [name] <duration>  Start a named countdown (default name: default)"
     out_plain "  stop [name]                          Stop and show remaining time"
     out_plain "  status [name]                        Show remaining time without stopping"
-    out_plain "  list [--persist]                     List running countdowns (volatile or persistent)"
+    out_plain "  list [--persist]                     List all running countdowns (no name; filter with status)"
     out_plain "  kill [name]                          Discard a running countdown without remaining report"
     out_plain "  reset [name]                         Reset (discard) a running countdown"
     out_empty_line
@@ -2965,7 +3023,10 @@ app_main() {
                             COUNTDOWN_NAME="$1"
                         fi
                         ;;
-                    stop|status|list|kill|reset)
+                    list)
+                        out_die "list does not accept a name argument; use status <name>. See '${APP_NAME} help'."
+                        ;;
+                    stop|status|kill|reset)
                         COUNTDOWN_NAME="$1"
                         ;;
                     *)

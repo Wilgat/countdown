@@ -1,6 +1,6 @@
 # countdown
 
-![Version](https://img.shields.io/badge/Version-1.1.0-blue?style=flat-square)
+![Version](https://img.shields.io/badge/Version-1.1.1-blue?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 [![CIAO](https://img.shields.io/badge/Philosophy-CIAO%20(Caution%20%E2%80%A2%20Intentional%20%E2%80%A2%20Anti--fragile%20%E2%80%A2%20Over--protect)-purple.svg)](https://github.com/cloudgen/ciao)
 [![Shell](https://img.shields.io/badge/Shell-POSIX%20sh-orange?style=flat-square)]()
@@ -8,12 +8,12 @@
 [![GrokRec](https://img.shields.io/badge/GrokRec-Reviewed-0A66C2?logo=ai&logoColor=white)](https://github.com/Wilgat/countdown/blob/main/RECOMMENDATION.md)
 [![Stars](https://img.shields.io/github/stars/Wilgat/countdown?style=flat-square)](https://github.com/Wilgat/countdown)
 
-Official Recommendation from [grok](https://grok.com/c/dd443680-0c83-41c4-a501-8cb0990e3e9b?rid=1063a0bb-9371-4ad3-91d6-649c3b58bc45). The review is submitted by [grokrec](https://github.com/cloudgen/grokrec). Please refers to the [downloaded copy](https://github.com/Wilgat/countdown/blob/main/RECOMMENDATION.md) .
+Official Recommendation from [grok](https://grok.com/c/dd443680-0c83-41c4-a501-8cb0990e3e9b?rid=1063a0bb-9371-4ad3-91d6-649c3b58bc45). The review is submitted by [grokrec](https://github.com/cloudgen/grokrec). Please refer to the [downloaded copy](https://github.com/Wilgat/countdown/blob/main/RECOMMENDATION.md).
 
 **Lightweight, per-user named countdown timers** for the terminal.  
 Extremely robust, zero dependencies, and built with a strong defensive philosophy to survive harsh environments.
 
-Author: **Wilgat Wong** &lt;wigat.wong@gmail.com&gt;
+Author: **Wilgat Wong** &lt;wilgat.wong@gmail.com&gt;
 
 Architecture: Type 0 self-managed CLI specialized from the [timer](https://github.com/Wilgat/timer) bootstrap (A→B). Domain behavior preserves countdown **remaining time** and human **duration** strings from the classic countdown tool.
 
@@ -45,19 +45,22 @@ Architecture: Type 0 self-managed CLI specialized from the [timer](https://githu
 Default install channel (Config SSOT):  
 `https://raw.githubusercontent.com/Wilgat/countdown/main/countdown`
 
-```sh
-# Recommended: pin exact bytes with checksum
-CHECKSUM=034a45b52c82b6fc7663d6d8dcfb242b188ba1a5d8cd799bfcc3d305937d5ab1 \
-  curl -fsSL https://raw.githubusercontent.com/Wilgat/countdown/main/countdown | sh
-```
-
-**Standard one-liner (automatic verification):**
+**Standard install (automatic companion verification — recommended for most users):**
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/Wilgat/countdown/main/countdown | sh
 ```
 
 When `CHECKSUM` is not set, install and self-update fetch `${SCRIPT_URL}.sha256` automatically (in-repo companion: [`countdown.sha256`](./countdown.sha256)). Match continues; mismatch aborts; missing sidecar warns and continues (best-effort).
+
+**Advanced / CI — pin exact bytes with an explicit checksum:**
+
+```sh
+CHECKSUM=df0e582490fa1705f50f71474b418ecf8da68ee90b6e2055ac0dd2124ae0d110 \
+  curl -fsSL https://raw.githubusercontent.com/Wilgat/countdown/main/countdown | sh
+```
+
+`CHECKSUM` is an optional install-path pin (not listed in `help` / `about`). Prefer regenerating the pin from the published companion whenever you cut a release.
 
 **For maintainers:**
 

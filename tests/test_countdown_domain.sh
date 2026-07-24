@@ -1,7 +1,7 @@
 # =============================================================================
-# tests/test_countdown_domain.sh — countdown domain (RQ-DOMAIN-COUNTDOWN / TP-COUNTDOWN-*)
+# tests/test_countdown_domain.sh — countdown domain (RQ-DOMAIN-COUNTDOWN / TP-COUNTDOWN-* ops + TP-STORAGE-*)
 # =============================================================================
-# Domain-subject family TP-COUNTDOWN-* proves RQ-DOMAIN-COUNTDOWN (policy-harness-id-notation §5).
+# Domain-subject family TP-COUNTDOWN-* ops + TP-STORAGE-* proves RQ-DOMAIN-COUNTDOWN (policy-harness-id-notation §5).
 # Duration + remaining-time semantics (not timer elapsed). Type O-P TP-PAYLOAD-* n/a.
 # =============================================================================
 
@@ -9,7 +9,7 @@
 . "${TESTS_ROOT}/helpers.sh"
 
 run_test_countdown_domain() {
-    t_header "Countdown domain (TP-COUNTDOWN-*)"
+    t_header "Countdown domain (TP-COUNTDOWN-* ops + TP-STORAGE-*)"
 
     require_cmd date
     require_cmd sh
@@ -165,22 +165,22 @@ else:
     assert_eq "TP-COUNTDOWN-07 invalid name json exit 1" 1 "$_ec"
     assert_contains "TP-COUNTDOWN-07 invalid_name code" "$_err" "invalid_name"
 
-    # --- TP-COUNTDOWN-08: --persist start / list / stop ---
+    # --- TP-STORAGE-02: --persist start / list / stop ---
     _out=$(_run start --persist persist-t 45s 2>/dev/null)
     _ec=$?
-    assert_eq "TP-COUNTDOWN-08 persist start exit 0" 0 "$_ec"
-    assert_contains "TP-COUNTDOWN-08 persist mode note or success" "$_out" "started"
+    assert_eq "TP-STORAGE-02 persist start exit 0" 0 "$_ec"
+    assert_contains "TP-STORAGE-02 persist mode note or success" "$_out" "started"
 
     _out=$(_run list --persist 2>/dev/null)
     _ec=$?
-    assert_eq "TP-COUNTDOWN-08 persist list exit 0" 0 "$_ec"
-    assert_contains "TP-COUNTDOWN-08 persist list name" "$_out" "persist-t"
+    assert_eq "TP-STORAGE-02 persist list exit 0" 0 "$_ec"
+    assert_contains "TP-STORAGE-02 persist list name" "$_out" "persist-t"
 
     _out=$(_run stop --persist persist-t 2>/dev/null)
     _ec=$?
-    assert_eq "TP-COUNTDOWN-08 persist stop exit 0" 0 "$_ec"
+    assert_eq "TP-STORAGE-02 persist stop exit 0" 0 "$_ec"
 
-    # --- TP-COUNTDOWN-09: volatile private dir storage ---
+    # --- TP-STORAGE-01: volatile private dir storage ---
     # Layout: ${VOLATILE|/tmp}/${APP_NAME}-${USER}/${APP_NAME}_${USER}_${name}
     _run start stor-path 50s >/dev/null 2>&1
     _u=$(id -un 2>/dev/null || echo "unknown")
@@ -195,18 +195,18 @@ else:
         fi
     done
     if [ "$_hit" -eq 1 ]; then
-        t_pass "TP-COUNTDOWN-09 volatile private dir file present"
+        t_pass "TP-STORAGE-01 volatile private dir file present"
     else
         _out=$(_run status stor-path 2>/dev/null)
         if [ $? -eq 0 ]; then
-            t_pass "TP-COUNTDOWN-09 storage resolved (status OK; path layout may differ)"
+            t_pass "TP-STORAGE-01 storage resolved (status OK; path layout may differ)"
         else
-            t_fail "TP-COUNTDOWN-09 no storage file and status failed"
+            t_fail "TP-STORAGE-01 no storage file and status failed"
         fi
     fi
     _run stop stor-path >/dev/null 2>&1 || true
 
-    # --- TP-COUNTDOWN-10: corrupted state → clean error ---
+    # --- TP-STORAGE-03: corrupted state → clean error ---
     _run start corrupt-me 60s >/dev/null 2>&1
     _u=$(id -un 2>/dev/null || echo "unknown")
     _state=
@@ -222,13 +222,13 @@ else:
         _err=$(_run --json status corrupt-me 2>&1 >/dev/null)
         _ec=$?
         if [ "$_ec" -ne 0 ]; then
-            t_pass "TP-COUNTDOWN-10 corrupted state status non-zero"
-            assert_contains "TP-COUNTDOWN-10 corrupted_data or error type" "$_err" "corrupted"
+            t_pass "TP-STORAGE-03 corrupted state status non-zero"
+            assert_contains "TP-STORAGE-03 corrupted_data or error type" "$_err" "corrupted"
         else
-            t_fail "TP-COUNTDOWN-10 corrupted state expected non-zero status"
+            t_fail "TP-STORAGE-03 corrupted state expected non-zero status"
         fi
     else
-        t_skip "TP-COUNTDOWN-10 could not locate state file to corrupt"
+        t_skip "TP-STORAGE-03 could not locate state file to corrupt"
     fi
     _run kill corrupt-me >/dev/null 2>&1 || true
     _run stop corrupt-me >/dev/null 2>&1 || true

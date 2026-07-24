@@ -212,9 +212,9 @@ A domain change for countdown is **not done** if any fail:
 | **TP-COUNTDOWN-05** `no_countdown` | `tests/test_countdown_domain.sh` | have |
 | **TP-COUNTDOWN-06** kill / reset | `tests/test_countdown_domain.sh` | have |
 | **TP-COUNTDOWN-07** `invalid_name` | `tests/test_countdown_domain.sh` | have |
-| **TP-COUNTDOWN-08** `--persist` | `tests/test_countdown_domain.sh` | have |
-| **TP-COUNTDOWN-09** volatile private dir storage | `tests/test_countdown_domain.sh` | have |
-| **TP-COUNTDOWN-10** corrupted state | `tests/test_countdown_domain.sh` | have |
+| **TP-STORAGE-02** `--persist` (shared dual-storage) | `tests/test_countdown_domain.sh` | have |
+| **TP-STORAGE-01** volatile private-dir path (shared) | `tests/test_countdown_domain.sh` | have |
+| **TP-STORAGE-03** corrupted state (shared) | `tests/test_countdown_domain.sh` | have |
 | **TP-PAYLOAD-*** Type O-P scaffold | n/a — not Type O-P payload product | n/a |
 
 

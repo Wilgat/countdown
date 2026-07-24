@@ -15,7 +15,8 @@ Runner: `./tests/run.sh`
 | **TP-CSUM** | `PM-CHECKSUM-TEST-PLAN` | CLI + lifecycle |
 | **TP-U** | `PM-SET-U-TEST-PLAN` | CLI + curl (partial) |
 | **TP-CURL** | `PM-ONLINE-CURL-INSTALL-TEST-PLAN` | `tests/test_online_curl_install.sh` |
-| **TP-COUNTDOWN** | `PM-DOMAIN-TEST-PLAN` (specialize) | `tests/test_countdown_domain.sh` |
+| **TP-COUNTDOWN** | `PM-DOMAIN-TEST-PLAN` §4.3.1 (ops) | `tests/test_countdown_domain.sh` |
+| **TP-STORAGE** | `PM-DOMAIN-TEST-PLAN` §4.2 shared dual-storage | `tests/test_countdown_domain.sh` |
 | Umbrella | `PM-SHELL-CLI-SUITE-TEST-PLAN` | `tests/run.sh` |
 | RTM mold | `PM-REQUIREMENT-TEST-TRACEABILITY` | `reviews/requirement-test-matrix.md` |
 
@@ -29,7 +30,7 @@ Runner: `./tests/run.sh`
 | **TP-CLI-02** | version human + JSON | **have** | `test_cli.sh` |
 | **TP-CLI-03** | help Type 0 + domain rows; no CHECKSUM | **have** | `test_cli.sh` |
 | **TP-CLI-04** | help/about JSON purity | **have** | `test_cli.sh` |
-| **TP-CLI-05** | shell storage about fields | **n/a** | domain owns storage (**TP-COUNTDOWN-09**) |
+| **TP-CLI-05** | shell storage about fields | **n/a** | domain owns storage (**TP-STORAGE-***) |
 | **TP-CLI-06** | unknown command + JSON error | **have** | `test_cli.sh` |
 | **TP-CLI-07** | quiet / `-q` | **have** | `test_cli.sh` |
 | **TP-CLI-08** | `env -u HOME` under set -u | **have** | with **TP-U-01** |
@@ -113,12 +114,21 @@ Policy: `policy-harness-id-notation` §5.
 | **TP-COUNTDOWN-05** | `no_countdown` error code | **have** | domain suite |
 | **TP-COUNTDOWN-06** | kill / reset | **have** | domain suite |
 | **TP-COUNTDOWN-07** | `invalid_name` | **have** | domain suite |
-| **TP-COUNTDOWN-08** | `--persist` start/list/stop | **have** | domain suite |
-| **TP-COUNTDOWN-09** | Volatile **private dir** storage | **have** | `/dev/shm|tmp/${APP}-${USER}/…` |
-| **TP-COUNTDOWN-10** | Corrupted state → `corrupted_data` | **have** | domain suite |
 | **TP-PAYLOAD-*** | Type O-P payload scaffold (mold) | **n/a** | not a Type O-P payload product |
 
-**Legacy map (retired):** review-local `TP-01..10` → portable families above; product domain family is **`TP-COUNTDOWN-*`** only.
+---
+
+## TP-STORAGE — Shared dual-storage (`PM-DOMAIN-TEST-PLAN` §4.2)
+
+**Not subject-branded** (timer · countdown · pomo · peers). Primary storage proof IDs.
+
+| TP-ID | Intent | Status | Evidence | Legacy alias |
+|-------|--------|--------|----------|--------------|
+| **TP-STORAGE-01** | Volatile private-dir path | **have** | `/dev/shm|tmp/${APP}-${USER}/…` | was **TP-COUNTDOWN-09** |
+| **TP-STORAGE-02** | `--persist` start/list/stop | **have** | domain suite | was **TP-COUNTDOWN-08** |
+| **TP-STORAGE-03** | Corrupted state → `corrupted_data` | **have** | domain suite | was **TP-COUNTDOWN-10** |
+
+**Legacy map:** review-local `TP-01..10` → families; storage **TP-COUNTDOWN-08..10** → **`TP-STORAGE-01..03`**; ops remain **`TP-COUNTDOWN-01..07`**.
 
 ---
 

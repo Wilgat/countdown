@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [1.1.2] - 2026-07-24
+
+### Fixed
+- `countdown_status` validates numeric state fields before arithmetic (corrupted state → `corrupted_data`, no dash "Illegal number")
+
+### Changed
+- Aligned product Requirement-IDs (`RQ-*`) and suite TP-IDs with harness ID notation; each live requirement has Design-time verification
+- Domain SSOT renamed to `requirement-domain-countdown` / **`RQ-DOMAIN-COUNTDOWN`**; product domain family **`TP-COUNTDOWN-01..10`**
+- Expanded CI suite: TP-labeled CLI/lifecycle parity, local-channel TP-CURL suite, domain TP-COUNTDOWN coverage (198 PASS / 0 FAIL / 1 SKIP optional online)
+- Product maps: `reviews/test-plan.md`, `reviews/requirement-test-matrix.md`
+- Registered class law `requirement-class-software-dev` / **`RQ-CLASS-SOFTWARE-DEV`**
+- Harness H2 from genesis: law/proof molds under `docs/templates/requirements/` and `docs/templates/tests/` (local); ID-notation policies/skills/terms
+
+### Security
+- Regenerated `countdown.sha256` for **1.1.2**
+
+---
+
 ## [1.1.1] - 2026-07-19
 
 ### Fixed

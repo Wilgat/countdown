@@ -4,6 +4,10 @@ POSIX `/bin/sh` CI suite for the Type 0 + domain ship unit `./countdown`.
 
 Bootstrap architecture matches the timer Type 0 harness; this suite is specialized for `APP_NAME=countdown` and adds **countdown domain** coverage (duration + remaining time).
 
+**Proof molds → product map:** `reviews/test-plan.md`  
+**Requirement ↔ test matrix:** `reviews/requirement-test-matrix.md`  
+**Umbrella mold:** `PM-SHELL-CLI-SUITE-TEST-PLAN`
+
 ## Run locally
 
 ```sh
@@ -18,24 +22,39 @@ Optional override:
 APP_NAME=countdown ./tests/run.sh
 ```
 
+Optional public online curl smoke:
+
+```sh
+RUN_ONLINE_CURL_TESTS=1 ./tests/run.sh
+```
+
 ## What is covered
 
-| Suite | File | Focus |
-|-------|------|--------|
-| CLI surface | `test_cli.sh` | `sh -n`, companion digest, `version` / `help` / `about` (human + JSON), domain verbs in help, unknown command, quiet, `CHECKSUM` not on help/about, `env -u HOME`, zero-arg install failure exit, uninstall fail-closed JSON |
-| Install lifecycle | `test_install_lifecycle.sh` | Isolated `HOME`/`USER_BIN`, local channel install, idempotent re-install, **Type O** zero-arg already-installed (local + global, not help), version-check JSON keys, self-update already-latest, human integrity transparency, uninstall refuse / `--force`, `CHECKSUM` pin match/mismatch, downgrade refuse / `--force` |
-| Countdown domain | `test_countdown_domain.sh` | `start` with duration / `stop` / `status` / `list`, `--json`, `--persist`, `kill` / `reset`, missing/invalid duration, invalid name, already-running, `no_countdown` |
+| Suite | File | TP families | Focus |
+|-------|------|-------------|--------|
+| CLI surface | `test_cli.sh` | **TP-CLI**, **TP-CSUM-01/05**, **TP-U-01/02** | `sh -n`, companion digest, version/help/about, unknown command, quiet, zero-arg fail, uninstall refuse, `out_json` string keys |
+| Install lifecycle | `test_install_lifecycle.sh` | **TP-LC**, **TP-CSUM-02..04** | isolated channel install, Type O zero-arg, version-check, self-update, uninstall, pin match/mismatch, downgrade |
+| Online curl\|sh | `test_online_curl_install.sh` | **TP-CURL** | local-channel pipe install, second pipe, unreachable URL, hostile HOME |
+| Countdown domain | `test_countdown_domain.sh` | **TP-COUNTDOWN-01..10** | duration start, remaining status/stop, already-running, JSON, persist, private-dir storage, corrupted state |
 
 ## Mapping (product law)
 
-Type 0 cases map to live `docs/requirements/requirement-shell-*.md` (CLI interface, zero-arguments, output, interactive, idempotency, self-management, automatic-checksum). Domain cases cover specialized countdown commands on top of that architecture.
+| Requirement-ID | Primary TP families |
+|----------------|---------------------|
+| `RQ-SHELL-CLI-INTERFACE` | TP-CLI-* |
+| `RQ-SHELL-CLI-ZERO-ARGUMENTS` | TP-CLI-09, TP-LC-01, TP-CURL-02/03/08 |
+| `RQ-SHELL-OUTPUT-REQUIREMENTS` | TP-CLI-02/04/06/07/12, TP-COUNTDOWN-04 |
+| `RQ-SHELL-AUTOMATIC-CHECKSUM` | TP-CSUM-* |
+| `RQ-SHELL-SELF-MANAGEMENT` | TP-LC-*, TP-CLI-11 |
+| `RQ-SHELL-IDEMPOTENCY` | TP-LC-01/05/10, TP-CURL-03 |
+| `RQ-SHELL-INTERACTIVE-VS-NONINTERACTIVE` | TP-CLI-07/11, TP-CURL-02/03 |
+| `RQ-DOMAIN-COUNTDOWN` | **TP-COUNTDOWN-01..10** |
+| `RQ-CLASS-SOFTWARE-DEV` | TP-CLASS-01 + suite green |
 
-## Mapping (public reviews)
-
-Review-driven cases and open TODOs live under [`../reviews/test-plan.md`](../reviews/test-plan.md) (TP-* rows). Prior failure modes that tests should lock: [`../reviews/lessons.md`](../reviews/lessons.md).
+Primary citation: **TP-*** / **RQ-*** (policy-harness-id-notation). Paths secondary.
 
 ## Network / safety
 
 - No secrets and no root.
-- Install lifecycle serves the checkout over `127.0.0.1` (does not require public raw GitHub).
-- Domain tests use isolated `HOME` for persistent storage and clean volatile countdown files for the current user after the suite.
+- Install lifecycle and curl suites serve the checkout over `127.0.0.1` (does not require public raw GitHub).
+- Domain tests use isolated `HOME` for persistent storage and clean private volatile countdown dirs for the current user after the suite.

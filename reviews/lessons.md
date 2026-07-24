@@ -30,7 +30,7 @@ Agents doing any product or origin review **MUST** re-check these points even if
 | ID | Lesson | Re-check |
 |----|--------|----------|
 | L-07 | wget companion success must not require only the string `HTTP/1.1 200` | HTTP/2 / 1.0 CDNs |
-| L-08 | State file integers must be validated before `$((…))` | corrupt / hostile content |
+| L-08 | State file integers must be validated before `$((…))` | corrupt / hostile content — **status** path closed 2026-07-24 (TP-COUNTDOWN-10); keep stop/list parity |
 | L-09 | Domain start should use exclusive create (avoid TOCTOU last-writer-wins) | concurrent start |
 | L-10 | Nested JSON list fields: document string-encoded array or emit real arrays | `list --json` |
 | L-11 | README: automatic companion one-liner is default; `CHECKSUM=` pin is advanced/CI | install docs order |

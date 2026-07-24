@@ -1,60 +1,48 @@
-# Requirements
+# Requirements (countdown)
 
-Authoritative product and engineering requirements for this project live here.
-
-**Current state (2026-07-19 — countdown specialization from timer bootstrap):** **Ten** live requirements: **eight** Type 0 / structure `requirement-shell-*` files; **`requirement-shell-domain`** (**single current domain SSOT** — specialized subcommands, features, help items, about items); **`requirement-bootstrap-chain`** (lineage). Registry: `index.md` (must stay in sync). **Domain SSOT exception:** not required at **genesis template**. Do **not** invent parallel Active domain law files without superseding the current domain SSOT.
-
-## Purpose
-
-- **Plan mode** designs work by reading and **updating** these docs — not only the session `plan.md`.
-- **Implement** delivers code and docs that **trace** to requirement IDs.
-- **Review** verifies delivery against requirements **and** defensive (CIAO) checklists.
+**Current state (2026-07-24 — ID notation + mold alignment):** Live Active set registered in `index.md` with primary **Requirement-IDs (`RQ-*`)**. Includes **class** (`RQ-CLASS-SOFTWARE-DEV`), **eight** Type 0 / structure `requirement-shell-*` files, **domain SSOT** `requirement-domain-countdown` / **`RQ-DOMAIN-COUNTDOWN`**, and **bootstrap chain** (`RQ-BOOTSTRAP-CHAIN`).
 
 ## Layout
 
 | Path | Role |
 |------|------|
 | `docs/requirements/index.md` | Registry of all requirements (IDs, status, owners) — keep in sync with files |
-| `docs/requirements/requirement-*.md` | CIAO-style project requirements (flat; primary live convention) |
+| `docs/requirements/requirement-*.md` | Project-enforceable product law |
 | `docs/requirements/<area>/<REQ-ID>.md` | Optional council-style `REQ-<AREA>-<NNN>` files |
 
-Suggested areas (if using subdirs): `product/`, `platform/`, `security/`, `ops/` — create as needed.
+## ID notation
 
-## ID scheme
-
-- Format: `REQ-<AREA>-<NNN>` (example: `REQ-PLAT-001`).
-- IDs are stable. Prefer status/`supersedes` over renumbering.
-- Record every ID in `index.md` when created or status changes.
+- **Primary citation:** `RQ-*` Requirement-IDs on product surfaces (reviews, tests comments, DTV).
+- Basename / path is secondary.
+- Format for optional council files: `REQ-<AREA>-<NNN>` (example: `REQ-PLAT-001`).
+- **Never** freeze product `RQ-*` into portable templates/skills/terminologies (policy-harness-id-notation).
+- Test cases use **`TP-*`**; skills **`SK-*`**; law molds **`LM-*`**; proof molds **`PM-*-TEST-PLAN`**.
 
 ## Status values
 
 | Status | Meaning |
 |--------|---------|
-| `draft` | Proposed; not yet approved for implementation |
-| `approved` | Ready to implement |
+| `draft` | Proposed; not yet binding |
+| `approved` / `Active` | Binding product law |
 | `in-progress` | Implementation underway |
-| `done` | Delivered and reviewed against checklists |
-| `deprecated` | No longer active; keep file for history |
-| `superseded` | Replaced by another REQ-ID (link it) |
+| `done` | Implemented and verified |
+| `deprecated` | No longer binding |
+| `superseded` | Replaced by another Requirement-ID (link it) |
 
-## Plan-mode rules (mandatory)
+## Agent rules
 
-When planning non-trivial work:
+1. Do not invent requirement basenames — verify disk + registry.
+2. Same-change: create/update file **and** `index.md` row.
+3. Product source cites only live `requirement-*.md` (not templates/skills as behavioral authority).
+4. Session plan must list affected Requirement-IDs and whether each is create / update / no-change.
+5. Every non-trivial PR/change set cites one or more Requirement-IDs when requirements exist.
+6. Empty registry is valid for genesis; do not invent requirements to “fill” the index.
+7. **Design-time verification** lists TP-IDs + `tests/*` + `reviews/*` only — never `docs/templates/**` paths.
+8. Domain SSOT basename is `requirement-domain-<subject>.md` only (this product: `requirement-domain-countdown`).
 
-1. Search `docs/requirements/` (and `index.md`) for related requirements.
-2. Decide: **new requirement**, **update existing**, or **no requirements impact** (state why).
-3. Apply requirement file changes **before** or as part of finishing the plan.
-4. Session plan (`plan.md`) must list affected REQ-IDs and whether each is create / update / no-change.
-5. Do not implement against unstated intent — if behavior is required, it belongs in a requirement file.
+## Related
 
-## Implementation rules
-
-- Every non-trivial PR/change set cites one or more REQ-IDs in commit/PR/summary when requirements exist.
-- Do not invent requirements only in code comments; promote durable intent here.
-- **No placeholders** in requirement files: no `TBD`/`TODO` acceptance criteria, hollow sections, or stub “later” text (no-placeholder / dual-policy hygiene; deliver complete criteria or explicit deferred ownership).
-- Product source comments cite only **live** `requirement-*.md` files (never invent basenames).
-
-## Review rules
-
-- Requirements changes and code/docs delivery use the project’s plan/implement/code-review/security checklist process.
-- Empty registry is valid for genesis; do not invent requirements to “fill” the index.
+- Product RTM: `reviews/requirement-test-matrix.md`
+- Product test plan: `reviews/test-plan.md`
+- Portable law molds: `docs/templates/requirements/` (local harness)
+- Portable proof molds: `docs/templates/tests/` (local harness)

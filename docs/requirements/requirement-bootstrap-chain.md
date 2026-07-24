@@ -1,4 +1,5 @@
 **file**: docs/requirements/requirement-bootstrap-chain.md  
+**Requirement-ID**: `RQ-BOOTSTRAP-CHAIN`  
 **Status**: Active (Version 1.0.0 – CIAO v2.10.2 Principles 1/2/3/4/5/20)  
 **Philosophy**: CIAO / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
 
@@ -189,6 +190,20 @@ A change that touches parentage, ship-unit bootstrap claims, or shared Type 0 su
 | `./timer` | Immediate origin ship unit when present in workspace |
 
 ---
+
+## Design-time verification
+
+**Requirement-ID:** `RQ-BOOTSTRAP-CHAIN`  
+**Specialized from:** `LM-BOOTSTRAP-CHAIN`  
+**Matrix:** `reviews/requirement-test-matrix.md`  
+**Map:** `reviews/test-plan.md`
+
+| Gate / TP | Suite or method | Status |
+|-----------|-----------------|--------|
+| Lineage docs honest (timer → countdown) | static review + `reviews/` | have |
+| No reverse-copy of ship unit | process / reviews | have |
+| Suite green after specialize hops | `./tests/run.sh` | have |
+
 
 **Last Updated**: 2026-07-15  
 **Owner**: countdown project maintainers  

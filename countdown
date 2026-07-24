@@ -42,9 +42,9 @@ set -u  # Treat unset variables as error (defensive)
 : "${APP_DESC:=Lightweight per-user named countdown timers (volatile or persistent)}"
 : "${SHORT_DESCRIPTION:=${APP_DESC}}"
 : "${DESCRIPTION:=POSIX /bin/sh Type 0 CLI: install, version-check, self-update, self-uninstall, about, plus countdown start/stop/status/list with duration.}"
-# Product version SSOT (specialized 1.1.1 from timer architecture + countdown domain). Extractors use: grep '^VERSION="'
-VERSION="1.1.1"
-: "${VERSION:=1.1.1}"
+# Product version SSOT (specialized 1.1.2 from timer architecture + countdown domain). Extractors use: grep '^VERSION="'
+VERSION="1.1.2"
+: "${VERSION:=1.1.2}"
 
 # Runtime flags (safe defaults)
 : "${QUIET:=0}"
@@ -2542,6 +2542,17 @@ countdown_status() {
         rm -f "$COUNTDOWN_FILE" 2>/dev/null || true
         countdown_domain_fail "Corrupted countdown file" "corrupted_data"
     }
+    # Fail closed before arithmetic (set -u / dash illegal number) — align with stop path
+    case "${start_time}" in "" | *[!0-9]*)
+        rm -f "$COUNTDOWN_FILE" 2>/dev/null || true
+        countdown_domain_fail "Corrupted countdown file" "corrupted_data"
+        ;;
+    esac
+    case "${target_time}" in "" | *[!0-9]*)
+        rm -f "$COUNTDOWN_FILE" 2>/dev/null || true
+        countdown_domain_fail "Corrupted countdown file" "corrupted_data"
+        ;;
+    esac
 
     current_time=$(date +%s)
     remaining=$((target_time - current_time))
@@ -2693,7 +2704,7 @@ app_about() {
     : "${QUIET:=0}"
     : "${APP_NAME:=countdown}"
     # Version comes from global SSOT (VERSION="1.0.0" near top); default only if unset
-    : "${VERSION:=1.1.1}"
+    : "${VERSION:=1.1.2}"
     : "${GLOBAL_BIN:=/usr/local/bin}"
     : "${USER_BIN:=${HOME}/.local/bin}"
     : "${SCRIPT_URL:=}"
@@ -2811,7 +2822,7 @@ app_about() {
 
 app_version() {
     : "${APP_NAME:=countdown}"
-    : "${VERSION:=1.1.1}"
+    : "${VERSION:=1.1.2}"
     : "${JSON:=0}"
     if [ "${JSON}" -eq 1 ]; then
         # Same machine contract as historical app_main inline path

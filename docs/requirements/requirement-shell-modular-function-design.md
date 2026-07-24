@@ -1,4 +1,5 @@
 **file**: docs/requirements/requirement-shell-modular-function-design.md  
+**Requirement-ID**: `RQ-SHELL-MODULAR-FUNCTION-DESIGN`  
 **Status**: Active (Version 1.0.2 – CIAO v2.10.2 Principles 6/7/8/20)  
 **Philosophy**: CIAO / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
 
@@ -145,7 +146,7 @@ function_name() {
 | **Product / binary** | `countdown` (`APP_NAME`) |
 | **Single shipped script** | Repo root `./countdown` (~2.9k lines, `#!/bin/sh`) |
 | **`src/` directory** | **Not used** for runtime — single-file ship unit only |
-| **Domain prefix `countdown_*`** | **In use** — named-countdown domain ops; **behavior SSOT** = `requirement-shell-domain.md` (not this modular file) |
+| **Domain prefix `countdown_*`** | **In use** — named-countdown domain ops; **behavior SSOT** = `requirement-domain-countdown.md` (not this modular file) |
 | **Bootstrap** | Always `app_main "$@"` at end of script — **no** `${0##*/}` / `APP_NAME` basename gate (required for `curl \| sh`; INC-20260712-001) |
 
 #### Live prefix inventory (authoritative categories)
@@ -253,6 +254,20 @@ A modular-structure change for countdown is **not done** if any of the following
 | `./countdown` | Implementation under modular design rules |
 
 ---
+
+## Design-time verification
+
+**Requirement-ID:** `RQ-SHELL-MODULAR-FUNCTION-DESIGN`  
+**Specialized from:** `LM-MODULAR-FUNCTION-DESIGN`  
+**Matrix:** `reviews/requirement-test-matrix.md`  
+**Map:** `reviews/test-plan.md`
+
+| Gate / TP | Suite or method | Status |
+|-----------|-----------------|--------|
+| **TP-CLI-01** ship unit syntax | `tests/test_cli.sh` | have |
+| Prefix / modular structure | code review vs this REQ prefix table | have |
+| Behavior under suite umbrella | `./tests/run.sh` green | have |
+
 
 **Last Updated**: 2026-07-14
 **Owner**: countdown project maintainers  

@@ -1,4 +1,5 @@
 **file**: docs/requirements/requirement-shell-cli-interface.md  
+**Requirement-ID**: `RQ-SHELL-CLI-INTERFACE`  
 **Status**: Active (Version 1.0.2 – CIAO v2.10.2 Principles 5/6/9/10/16/20)  
 **Philosophy**: CIAO / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
 
@@ -82,7 +83,7 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 | **Primary executable** | Repo root `./countdown` (POSIX `/bin/sh`, single-file for `curl \| sh`) |
 | **Dispatcher** | `app_main` (always invoked at end of script: `app_main "$@"` — no `${0##*/}` / APP_NAME basename gate; required for `curl \| sh`) |
 | **Output SSOT** | `out_text` + wrappers (`out_info`, `out_success`, `out_warn`, `out_error`, `out_die`, `out_plain`, `out_json`, …) |
-| **Version SSOT** | `VERSION` in script config block (product SSOT; currently `VERSION="1.1.1"`) |
+| **Version SSOT** | `VERSION` in script config block (product SSOT; currently `VERSION="1.1.2"`) |
 | **Install paths** | Global: `GLOBAL_BIN` default `/usr/local/bin`; User: `USER_BIN` default `${HOME}/.local/bin` |
 | **Remote channel env (help surface)** | `REPO_USER` / `REPO_NAME` (defaults `Wilgat` / `countdown`); `SCRIPT_URL` composed default `https://raw.githubusercontent.com/${REPO_USER}/${REPO_NAME}/main/${APP_NAME}` (literal product default: `https://raw.githubusercontent.com/Wilgat/countdown/main/countdown`; override via env). **`help` / `about` MUST list these operator channel vars as designed — MUST NOT list `CHECKSUM`** (install-path runtime pin only; see `requirement-shell-automatic-checksum.md`) |
 | **Type 1 / Type 2 commands** | **None** on current surface — this tool is CLI lifecycle only |
@@ -123,7 +124,7 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 - Type 1: `prerequisites`, `create-user`, Docker host install, etc.  
 - Type 2: app host `start`/`stop`/`configure` under a system user  
 
-**Domain product subcommands** (countdown start/stop/status/list/kill/reset, duration, persist): owned by the **current domain SSOT** — `docs/requirements/requirement-shell-domain.md` (not duplicated as full catalog here). Dispatcher **must** still route them; help/about domain items follow that SSOT.
+**Domain product subcommands** (countdown start/stop/status/list/kill/reset, duration, persist): owned by the **current domain SSOT** — `docs/requirements/requirement-domain-countdown.md` (not duplicated as full catalog here). Dispatcher **must** still route them; help/about domain items follow that SSOT.
 
 ### 2.7 Why This Requirement Exists (Direct CIAO Alignment)
 
@@ -196,6 +197,30 @@ This requirement is satisfied for the countdown shell CLI when all of the follow
 | `./countdown` | Implementation under test |
 
 ---
+
+## Design-time verification
+
+**Requirement-ID:** `RQ-SHELL-CLI-INTERFACE`  
+**Specialized from:** `LM-CLI-INTERFACE`  
+**Matrix:** `reviews/requirement-test-matrix.md`  
+**Map:** `reviews/test-plan.md`
+
+| TP family / ID | Suite | Status |
+|----------------|-------|--------|
+| **TP-CLI-01** syntax + companion | `tests/test_cli.sh` | have |
+| **TP-CLI-02** version human + JSON | `tests/test_cli.sh` | have |
+| **TP-CLI-03** help Type 0 + domain rows | `tests/test_cli.sh` | have |
+| **TP-CLI-04** help/about JSON purity | `tests/test_cli.sh` | have |
+| **TP-CLI-05** about shell storage fields | n/a — domain owns storage (**TP-COUNTDOWN-09**) | n/a |
+| **TP-CLI-06** unknown command | `tests/test_cli.sh` | have |
+| **TP-CLI-07** quiet / `-q` | `tests/test_cli.sh` | have |
+| **TP-CLI-08** / **TP-U-01** `env -u HOME` | `tests/test_cli.sh` | have |
+| **TP-CLI-09** zero-arg bad channel | `tests/test_cli.sh` | have |
+| **TP-CLI-10** bashrc+sdkman | n/a — product has no sdkman source path | n/a |
+| **TP-CLI-11** self-uninstall refuse | `tests/test_cli.sh` | have |
+| **TP-CLI-12** out_json string keys | `tests/test_cli.sh` | have |
+| **TP-COUNTDOWN-01** domain help verbs | `tests/test_countdown_domain.sh` | have |
+
 
 **Last Updated**: 2026-07-14
 **Owner**: countdown project maintainers  

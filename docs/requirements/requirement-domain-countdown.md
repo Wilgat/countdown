@@ -1,4 +1,5 @@
-**file**: docs/requirements/requirement-shell-domain.md  
+**file**: docs/requirements/requirement-domain-countdown.md  
+**Requirement-ID**: `RQ-DOMAIN-COUNTDOWN`  
 **Status**: Active (Version 1.0.0 – CIAO v2.10.2 Principles 1/2/5/6/9/20)  
 **Philosophy**: CIAO / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
 
@@ -72,7 +73,7 @@ Domain law **MUST** define (when claimed):
 
 | Item | Value |
 |------|--------|
-| **Domain SSOT file** | This file: `docs/requirements/requirement-shell-domain.md` |
+| **Domain SSOT file** | This file: `docs/requirements/requirement-domain-countdown.md` |
 | **Product / APP_NAME** | `countdown` |
 | **Ship unit** | `./countdown` |
 | **Domain prefix** | `countdown_*` |
@@ -194,6 +195,28 @@ A domain change for countdown is **not done** if any fail:
 | `tests/test_countdown_domain.sh` | Domain suite |
 
 ---
+
+## Design-time verification
+
+**Requirement-ID:** `RQ-DOMAIN-COUNTDOWN`  
+**Specialized from:** `product domain SSOT (no portable domain law mold); design aid **`PM-DOMAIN-TEST-PLAN`** → family **`TP-COUNTDOWN`** (not `TP-DOM`)`  
+**Matrix:** `reviews/requirement-test-matrix.md`  
+**Map:** `reviews/test-plan.md`
+
+| TP family / ID | Suite | Status |
+|----------------|-------|--------|
+| **TP-COUNTDOWN-01** help domain verbs/flags | `tests/test_countdown_domain.sh` | have |
+| **TP-COUNTDOWN-02** start/status/list/stop + duration gates | `tests/test_countdown_domain.sh` | have |
+| **TP-COUNTDOWN-03** already-running | `tests/test_countdown_domain.sh` | have |
+| **TP-COUNTDOWN-04** JSON remaining | `tests/test_countdown_domain.sh` | have |
+| **TP-COUNTDOWN-05** `no_countdown` | `tests/test_countdown_domain.sh` | have |
+| **TP-COUNTDOWN-06** kill / reset | `tests/test_countdown_domain.sh` | have |
+| **TP-COUNTDOWN-07** `invalid_name` | `tests/test_countdown_domain.sh` | have |
+| **TP-COUNTDOWN-08** `--persist` | `tests/test_countdown_domain.sh` | have |
+| **TP-COUNTDOWN-09** volatile private dir storage | `tests/test_countdown_domain.sh` | have |
+| **TP-COUNTDOWN-10** corrupted state | `tests/test_countdown_domain.sh` | have |
+| **TP-PAYLOAD-*** Type O-P scaffold | n/a — not Type O-P payload product | n/a |
+
 
 **Last Updated**: 2026-07-16  
 **Owner**: countdown project maintainers  

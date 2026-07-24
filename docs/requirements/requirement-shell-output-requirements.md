@@ -1,4 +1,5 @@
 **file**: docs/requirements/requirement-shell-output-requirements.md  
+**Requirement-ID**: `RQ-SHELL-OUTPUT-REQUIREMENTS`  
 **Status**: Active (Version 1.1.0 – CIAO v2.10.2 Principle 5 SSOT family)  
 **Philosophy**: CIAO / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
 
@@ -263,6 +264,23 @@ Output-related work for countdown is **not done** if any of the following fail:
 | `./countdown` | Implementation under test |
 
 ---
+
+## Design-time verification
+
+**Requirement-ID:** `RQ-SHELL-OUTPUT-REQUIREMENTS`  
+**Specialized from:** `LM-OUTPUT-REQUIREMENTS`  
+**Matrix:** `reviews/requirement-test-matrix.md`  
+**Map:** `reviews/test-plan.md`
+
+| TP family / ID | Suite | Status |
+|----------------|-------|--------|
+| **TP-CLI-02** version JSON | `tests/test_cli.sh` | have |
+| **TP-CLI-04** help/about JSON purity | `tests/test_cli.sh` | have |
+| **TP-CLI-06** error JSON / loud fail | `tests/test_cli.sh` | have |
+| **TP-CLI-07** quiet suppresses human | `tests/test_cli.sh` | have |
+| **TP-CLI-12** `out_json` string keys | `tests/test_cli.sh` | have |
+| **TP-COUNTDOWN-04** domain JSON remaining | `tests/test_countdown_domain.sh` | have |
+
 
 **Last Updated**: 2026-07-14
 **Owner**: countdown project maintainers  

@@ -44,5 +44,3 @@
 
 - Product RTM: `reviews/requirement-test-matrix.md`
 - Product test plan: `reviews/test-plan.md`
-- Portable law molds: `docs/templates/requirements/` (local harness)
-- Portable proof molds: `docs/templates/tests/` (local harness)

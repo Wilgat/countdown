@@ -33,7 +33,7 @@ Agents doing any product or origin review **MUST** re-check these points even if
 | L-08 | State file integers must be validated before `$((…))` | corrupt / hostile content — **status** path closed 2026-07-24 (TP-COUNTDOWN-10); keep stop/list parity |
 | L-09 | Domain start should use exclusive create (avoid TOCTOU last-writer-wins) | concurrent start |
 | L-10 | Nested JSON list fields: document string-encoded array or emit real arrays | `list --json` |
-| L-11 | README: automatic companion one-liner is default; `CHECKSUM=` pin is advanced/CI | install docs order |
+| L-11 | README: automatic companion one-liner is default; `CHECKSUM=` pin is advanced/CI | install docs order — **closed** 2026-07-16; pin value re-aligned to current companion on 2026-08-13 |
 | L-12 | Requirement Implementation Notes VERSION must match ship unit VERSION | registry drift |
 | L-13 | Free tokens after `list` must filter or be rejected | CLI UX honesty |
 

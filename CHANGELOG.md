@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [Unreleased]
+
+### Changed
+- README advanced `CHECKSUM=` example now matches current `countdown.sha256` (1.1.2 ship-unit bytes)
+- Reviews residual honesty: domain law cites `requirement-domain-countdown`; L-11 pin closed; L-10 list JSON still open
+- Requirements README Related limited to product `reviews/` peers (no harness mold-path inventory)
+
+---
+
 ## [1.1.2] - 2026-07-24
 
 ### Fixed

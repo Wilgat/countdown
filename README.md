@@ -56,7 +56,7 @@ When `CHECKSUM` is not set, install and self-update fetch `${SCRIPT_URL}.sha256`
 **Advanced / CI — pin exact bytes with an explicit checksum:**
 
 ```sh
-CHECKSUM=df0e582490fa1705f50f71474b418ecf8da68ee90b6e2055ac0dd2124ae0d110 \
+CHECKSUM=c8c61a8a350e85b6044e46a1058f24a90ff7b12c8d4dfa0aab9b8d3e22073d93 \
   curl -fsSL https://raw.githubusercontent.com/Wilgat/countdown/main/countdown | sh
 ```
 

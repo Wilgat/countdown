@@ -35,7 +35,7 @@ Living checklist for product and bootstrap-origin reviews.
 | Idempotency | Re-install / already-latest / uninstall no-op | `requirement-shell-idempotency` |
 | Modular design | Prefixes, Protection Zones, no bare helpers | `requirement-shell-modular-function-design` |
 | Bootstrap chain | Hop table honesty; no reverse-copy | `requirement-bootstrap-chain` |
-| Domain | start/stop/status/list/kill/reset, duration, storage modes | (domain; covered by CLI + domain tests) |
+| Domain | start/stop/status/list/kill/reset, duration, storage modes | `requirement-domain-countdown` |
 | README / SECURITY | Install one-liner truth; pin secondary to automatic | product docs |
 | Tests | Suite maps to law + domain edges | `tests/` + this folder’s test-plan |
 

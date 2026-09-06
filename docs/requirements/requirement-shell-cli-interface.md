@@ -90,11 +90,12 @@ Destructive Type 0 actions (e.g. uninstall) **MUST** confirm when interactive un
 `help` **MUST** list:
 
 - Usage line  
+- Empty argv: no command means install or re-check install (not help)  
 - Every supported command with one-line purpose  
-- Privilege category (at least Type 0 vs elevated vs system-user when those exist)  
+- Privilege in people words (you run these as yourself / normal user privilege; no admin or dedicated-account commands when Type 1/2 are unused)  
 - Global flags  
 
-In JSON mode, help **MUST NOT** dump long human text; return a short structured success/note object instead.
+In JSON mode, help **MUST NOT** dump long human text; return a short structured success/note object instead. The JSON `note` **MUST** list domain verbs that accept `--json`, not only lifecycle verbs.
 
 ### 2.6 Implementation Notes (this project)
 
@@ -104,7 +105,7 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 | **Primary executable** | Repo root `./countdown` (POSIX `/bin/sh`, single-file for `curl \| sh`) |
 | **Dispatcher** | `app_main` (always invoked at end of script: `app_main "$@"` — no `${0##*/}` / APP_NAME basename gate; required for `curl \| sh`) |
 | **Output SSOT** | `out_text` + wrappers (`out_info`, `out_success`, `out_warn`, `out_error`, `out_die`, `out_plain`, `out_json`, …) |
-| **Version SSOT** | `VERSION` in script config block (product SSOT; currently `VERSION="1.1.4"`) |
+| **Version SSOT** | `VERSION` in script config block (product SSOT; currently `VERSION="1.1.5"`) |
 | **Install paths** | Global: `GLOBAL_BIN` default `/usr/local/bin`; User: `USER_BIN` default `${HOME}/.local/bin` |
 | **Remote channel env (help surface)** | `REPO_USER` / `REPO_NAME` (defaults `Wilgat` / `countdown`); `SCRIPT_URL` composed default `https://raw.githubusercontent.com/${REPO_USER}/${REPO_NAME}/main/${APP_NAME}` (literal product default: `https://raw.githubusercontent.com/Wilgat/countdown/main/countdown`; override via env). **`help` / `about` MUST list these operator channel vars as designed — MUST NOT list `CHECKSUM`** (install-path runtime pin only; see `requirement-shell-automatic-checksum.md`) |
 | **Type 1 / Type 2 commands** | **None** on current surface — this tool is CLI lifecycle only |

@@ -55,7 +55,12 @@ run_test_cli() {
     assert_contains "TP-CLI-03 help lists about" "$_out" "about"
     assert_contains "TP-CLI-03 help lists start (domain)" "$_out" "start"
     assert_contains "TP-CLI-03 help lists stop (domain)" "$_out" "stop"
+    assert_contains "TP-CLI-03 help lists status (domain)" "$_out" "status"
     assert_contains "TP-CLI-03 help lists list (domain)" "$_out" "list"
+    assert_contains "TP-CLI-03 help lists kill (domain)" "$_out" "kill"
+    assert_contains "TP-CLI-03 help lists reset (domain)" "$_out" "reset"
+    assert_contains "TP-CLI-03 help empty argv is install-ensure" "$_out" "no command"
+    assert_contains "TP-CLI-03 help privilege people words" "$_out" "normal user privilege"
     assert_contains "TP-CLI-03 help lists --persist" "$_out" "--persist"
     assert_contains "TP-CLI-03 help lists --json" "$_out" "--json"
     assert_contains "TP-CLI-03 help lists --force" "$_out" "--force"
@@ -71,6 +76,8 @@ run_test_cli() {
     assert_eq "TP-CLI-04 help --json exit 0" 0 "$_ec"
     assert_contains "TP-CLI-04 help --json type success" "$_out" '"type":"success"'
     assert_contains "TP-CLI-04 help --json command help" "$_out" '"command":"help"'
+    assert_contains "TP-CLI-04 help --json note lists start" "$_out" "start"
+    assert_contains "TP-CLI-04 help --json note lists self-uninstall" "$_out" "self-uninstall"
 
     _out=$(sh "${SCRIPT}" --json about 2>/dev/null)
     _ec=$?

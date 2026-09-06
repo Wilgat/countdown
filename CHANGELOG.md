@@ -10,6 +10,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [1.1.5] - 2026-09-06
+
+### Changed
+- Human `help` names empty-argv install-ensure and privilege in people words (you run these as yourself)
+- JSON `help` note lists domain verbs that accept `--json` (`start`/`stop`/`status`/`list`/`kill`/`reset`), not only lifecycle verbs
+- `list` help line: no name operand; use `status <name>`
+- `about` useful-commands include kill/reset/install; `--json` is a flag, not a command row
+
+### Fixed
+- Help DESCRIPTION omitted kill/reset and empty-argv meaning
+
+---
+
 ## [1.1.4] - 2026-09-06
 
 ### Changed

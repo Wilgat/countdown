@@ -139,21 +139,23 @@ Domain law **MUST** define (when claimed):
 
 `help` **MUST** include (human mode):
 
+- Usage line **and** empty-argv note: no command means install or re-check install, not help  
+- Privilege in people words: you run these as yourself (normal user privilege); no admin or dedicated-account commands  
 - Section **Countdown commands** with all domain verbs above  
 - **Duration formats** lines  
-- Type 0 **Self-Management** block (install, version, about, version-check, self-update, self-uninstall, help)  
+- **Self-Management** block (install, version, about, version-check, self-update, self-uninstall, help) — people heading, not catalog-only  
 - Global options including `--persist`, `--quiet`, `--json`, `--force`, `--debug`  
 - Environment: channel vars only (`REPO_USER`, `REPO_NAME`, `SCRIPT_URL`) — **not** `CHECKSUM`  
 - Optional note that timer is a separate tool  
 
-JSON help: short structured note (no full human dump) per CLI interface law.
+JSON help: short structured note (no full human dump) per CLI interface law. The JSON `note` **MUST** name domain verbs that accept `--json` (`start`, `stop`, `status`, `list`, `kill`, `reset`) as well as lifecycle verbs.
 
 #### Specialized project about items (countdown)
 
 | Field | Law |
 |-------|-----|
 | Type 0 diagnostics | Install global/local, user, shell, TTY — required |
-| Domain extras | **Human:** useful-commands lines for start/stop/status/list are allowed as navigation hints |
+| Domain extras | **Human:** useful-commands lines for start/stop/status/list/kill/reset are allowed as navigation hints; `--json` is a flag, not a command row |
 | Domain JSON fields | **No** mandatory domain-only about keys beyond Type 0 about shape unless added later in this SSOT |
 | CHECKSUM | **MUST NOT** appear in about |
 

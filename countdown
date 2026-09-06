@@ -43,10 +43,10 @@ set -u  # Treat unset variables as error (defensive)
 : "${APP_NAME:=countdown}"
 : "${APP_DESC:=Lightweight per-user named countdown timers (volatile or persistent)}"
 : "${SHORT_DESCRIPTION:=${APP_DESC}}"
-: "${DESCRIPTION:=POSIX /bin/sh CLI you run as yourself: install, version-check, self-update, self-uninstall, about, plus countdown start/stop/status/list with duration.}"
-# Product version SSOT (specialized 1.1.4: coverage honesty + README install verb). Extractors use: grep '^VERSION="'
-VERSION="1.1.4"
-: "${VERSION:=1.1.4}"
+: "${DESCRIPTION:=POSIX /bin/sh CLI you run as yourself. Start named remaining-time countdowns (start/stop/status/list/kill/reset). Also install, about, version-check, self-update, self-uninstall. No command means install or re-check install.}"
+# Product version SSOT (specialized 1.1.5: help operator copy). Extractors use: grep '^VERSION="'
+VERSION="1.1.5"
+: "${VERSION:=1.1.5}"
 
 # Runtime flags (safe defaults)
 : "${QUIET:=0}"
@@ -2748,7 +2748,7 @@ app_about() {
     : "${QUIET:=0}"
     : "${APP_NAME:=countdown}"
     # Version comes from global SSOT (VERSION="1.0.0" near top); default only if unset
-    : "${VERSION:=1.1.4}"
+    : "${VERSION:=1.1.5}"
     : "${GLOBAL_BIN:=/usr/local/bin}"
     : "${USER_BIN:=${HOME}/.local/bin}"
     : "${SCRIPT_URL:=}"
@@ -2879,10 +2879,13 @@ app_about() {
     out_info "   ${APP_NAME} stop [name]             → Stop and show remaining"
     out_info "   ${APP_NAME} status [name]           → Show remaining time"
     out_info "   ${APP_NAME} list                    → List running countdowns"
+    out_info "   ${APP_NAME} kill [name]             → Discard without remaining report"
+    out_info "   ${APP_NAME} reset [name]            → Discard / reset"
     out_info "   ${APP_NAME} help                    → Full usage"
+    out_info "   ${APP_NAME} install                 → Place this program for this login"
     out_info "   ${APP_NAME} self-update             → Update to latest version"
     out_info "   ${APP_NAME} self-uninstall          → Clean removal from system"
-    out_info "   ${APP_NAME} --json                  → Machine-readable output"
+    out_plain "  Flag: --json for machine-readable output (not a command)."
 
     out_empty_line
     out_info "Run '${APP_NAME} help' for complete usage information."
@@ -2890,7 +2893,7 @@ app_about() {
 
 app_version() {
     : "${APP_NAME:=countdown}"
-    : "${VERSION:=1.1.4}"
+    : "${VERSION:=1.1.5}"
     : "${JSON:=0}"
     if [ "${JSON}" -eq 1 ]; then
         # Same machine contract as historical app_main inline path
@@ -2915,12 +2918,12 @@ app_version() {
 
 app_help() {
     : "${SHORT_DESCRIPTION:=${APP_DESC:-Lightweight per-user named countdown timers (volatile or persistent)}}"
-    : "${DESCRIPTION:=POSIX /bin/sh CLI you run as yourself: install, version-check, self-update, self-uninstall, about, plus countdown start/stop/status/list with duration.}"
+    : "${DESCRIPTION:=POSIX /bin/sh CLI you run as yourself. Start named remaining-time countdowns (start/stop/status/list/kill/reset). Also install, about, version-check, self-update, self-uninstall. No command means install or re-check install.}"
 
     if [ "${JSON}" -eq 1 ]; then
         out_json "success" "Help text available in human-readable mode. Run without --json." \
             "command" "help" \
-            "note" "Use --json with version, about, version-check, install, self-update, self-uninstall."
+            "note" "Use --json with start, stop, status, list, kill, reset, version, about, version-check, install, self-update, self-uninstall."
         return 0
     fi
 
@@ -2934,13 +2937,18 @@ app_help() {
 
     out_info "Usage:"
     out_plain "  ${APP_NAME} [command] [options]"
+    out_plain "  ${APP_NAME}                          (no command: install or re-check install, not help)"
+    out_empty_line
+    out_info "Privilege:"
+    out_plain "  You run these commands as yourself (normal user privilege)."
+    out_plain "  There are no admin or dedicated-account commands."
     out_empty_line
 
     out_info "Countdown commands:"
     out_plain "  start [--persist] [name] <duration>  Start a named countdown (default name: default)"
     out_plain "  stop [name]                          Stop and show remaining time"
     out_plain "  status [name]                        Show remaining time without stopping"
-    out_plain "  list [--persist]                     List all running countdowns (no name; filter with status)"
+    out_plain "  list [--persist]                     List running countdowns (no name; use status <name>)"
     out_plain "  kill [name]                          Discard a running countdown without remaining report"
     out_plain "  reset [name]                         Reset (discard) a running countdown"
     out_empty_line

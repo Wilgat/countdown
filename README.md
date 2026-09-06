@@ -1,6 +1,6 @@
 # countdown - Lightweight per-user named countdown timers
 
-![Version](https://img.shields.io/badge/Version-1.1.4-blue?style=flat-square)
+![Version](https://img.shields.io/badge/Version-1.1.5-blue?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 [![CIAO](https://img.shields.io/badge/Philosophy-CIAO%20(Caution%20%E2%80%A2%20Intentional%20%E2%80%A2%20Anti--fragile%20%E2%80%A2%20Over--protect)-purple.svg)](https://github.com/cloudgen/ciao)
 [![Shell](https://img.shields.io/badge/Shell-POSIX%20sh-orange?style=flat-square)]()
@@ -90,7 +90,7 @@ When `CHECKSUM` is not set, install and self-update **download `${SCRIPT_URL}.sh
 **Advanced / CI — pin exact bytes with an explicit checksum** (optional; not listed in `help` / `about`):
 
 ```sh
-CHECKSUM=fa8c8c425611bf69f9a61513238ea056217119a78266095e951a0461dcd662f9 \
+CHECKSUM=b32a0ae3d959410677b5ecb82a0a9b6077fb8913a6675f190aaf8b4298536396 \
   curl -fsSL https://raw.githubusercontent.com/Wilgat/countdown/main/countdown | sh
 ```
 
@@ -226,6 +226,6 @@ MIT License — see the [LICENSE](LICENSE) file for details.
 
 ## Last Update
 
-2026-09-06 — 1.1.4: Usage lists `install`; elevated one-liner matches help; storage tests fail closed; duration `25m` and `list` extra-name coverage.
+2026-09-06 — 1.1.5: help names empty-argv install-ensure, privilege in people words, JSON `--json` domain verbs; about useful-commands include kill/reset/install.
 
 **Made with care and a healthy dose of paranoia.** ⏱️

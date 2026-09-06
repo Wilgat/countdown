@@ -12,6 +12,26 @@ It defines interactive vs non-interactive behavior for this shell project (globa
 **Scope:** Mode detection signals, prompt policy, auto-install vs confirm, force/skip rules, interaction with quiet/json/debug and output SSOT.  
 **Out of scope (cited, not re-owned):** Full command catalog (`requirement-shell-cli-interface.md`); output function catalog (`requirement-shell-output-requirements.md`); self-update integrity (`requirement-shell-self-management.md`); idempotency matrix (`requirement-shell-idempotency.md`).
 
+### 1.1 Human-facing
+
+**In one sentence:** If a human is at a terminal, `countdown` may ask yes/no; if you pipe it or pass `--json`, it must never hang waiting for a key.
+
+| You | The other role | Not this |
+|-----|----------------|----------|
+| A person at a terminal, or a script/CI job | Maintainers who keep prompts from blocking pipes | A numbered main menu |
+
+**Includes:** TTY measured once at start; `prompt_yes_no` for uninstall; auto-install on `curl | sh`.  
+**Excludes:** dest approval questions; capturing `prompt_ask` with `$()`.
+
+| Surface | What you open | What for |
+|---------|---------------|----------|
+| `countdown self-uninstall` | TTY confirm | yes/no |
+| `countdown self-uninstall --force` | non-interactive | no prompt |
+
+| You do… | What it means | What you type |
+|---------|---------------|---------------|
+| Uninstall from a script | Without `--force` it refuses. It does not wait on stdin. | `countdown self-uninstall --json` |
+
 ---
 
 ## 2. Core Rules / Requirements (Mandatory)
@@ -29,7 +49,7 @@ For shell CLIs without a separate Config class, the **mode SSOT** is the **globa
 
 | Signal | Variable / check | Meaning |
 |--------|------------------|---------|
-| TTY | `TTY=1` when stdin and stdout are terminals; also live `[ -t 0 ]` / `[ -t 1 ]` in prompt helpers | Interactive UX possible |
+| TTY | `TTY=1` when stdin and stdout are terminals — measured **outside functions** at script top | Interactive UX possible |
 | Quiet | `QUIET=1` (`--quiet` / `-q`) | Suppress non-essential human chatter |
 | JSON | `JSON=1` (`--json`; implies quiet) | Machine output; no human hang; no human banners |
 | Debug | `DEBUG=1` (`--debug`) | Extra stderr diagnostics; suppressed under JSON |
@@ -41,7 +61,7 @@ For shell CLIs without a separate Config class, the **mode SSOT** is the **globa
 1. Prompt, color, and hang-sensitive decisions **MUST** respect these globals and/or the shared `prompt_*` helpers—not ad-hoc `read` scattered in domain logic.  
 2. After global flags are parsed in `app_main`, subsequent code **MUST** see the updated `QUIET` / `JSON` / `FORCE` / `DEBUG` values.  
 3. Do **not** invent a second parallel mode system in individual commands.  
-4. Direct `[ -t … ]` checks **inside** `prompt_*` and carefully documented install helpers are allowed as part of the mode SSOT implementation; command business logic **SHOULD** call `prompt_*` instead of re-implementing prompt guards.
+4. `[ -t 0 ]` / `[ -t 1 ]` for interactive capability **MUST** run in the **main process, outside functions** (script top) and assign `TTY`. `prompt_*`, `out_*` color, and `about` **MUST consume `TTY`**. **MUST NOT** use live `[ -t` inside `prompt_*` as the policy gate. Command business logic **SHOULD** call `prompt_*` instead of re-implementing prompt guards.
 
 ```text
 flags + TTY / environment
@@ -112,7 +132,7 @@ interactive   non-interactive
 | **Product / binary** | `countdown` |
 | **Implementation** | Repo root `./countdown` |
 | **Mode globals** | `TTY`, `QUIET`, `JSON`, `DEBUG`, `FORCE`, `FORCE_REINSTALL` |
-| **TTY init** | `[ -t 0 ] && [ -t 1 ] && TTY=1` near config block |
+| **TTY init** | `[ -t 0 ] && [ -t 1 ] && TTY=1` at script top (**outside functions**); helpers consume `TTY` |
 | **Flag parse SSOT** | `app_main` |
 | **Prompt SSOT** | `prompt_yes_no`, `prompt_ask` |
 | **Output SSOT** | `out_*` (`requirement-shell-output-requirements.md`) |
@@ -135,18 +155,74 @@ interactive   non-interactive
 | Condition | Behavior |
 |-----------|----------|
 | `JSON=1` or `QUIET=1` | Return **1** (no / cancel)—never `read` |
-| Not a TTY on stdin or stdout | Return **1** (no)—never `read` |
-| TTY + interactive | Prompt via `out_msg_n`; yes → 0, else → 1 |
+| `TTY` is not `1` | Return **1** (no)—never `read` |
+| `TTY=1` + interactive | Prompt via `out_msg_n`; yes → 0, else → 1 |
 | Uninstall without force + non-TTY | Confirm fails → uninstall cancelled (safe default) |
 | Uninstall with `--force` | Skip confirm entirely |
+
+Call in the **current shell** (do not capture): `prompt_yes_no "This will remove: ${bin_path}"`. **MUST NOT** `_x=$(prompt_yes_no …)`.
+
+Complete sample (consume `TTY`; product UI via `out_*`):
+
+```sh
+prompt_yes_no() {
+    : "${JSON:=0}"
+    : "${QUIET:=0}"
+    : "${TTY:=0}"
+    local message="$1"
+    if [ "${JSON}" -eq 1 ] || [ "${QUIET}" -eq 1 ]; then
+        return 1
+    fi
+    if [ "${TTY}" -ne 1 ]; then
+        return 1
+    fi
+    out_msg_n "${message} (y/N)? "
+    local answer=""
+    read -r answer || true
+    case "${answer}" in
+        y|Y|yes|YES) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+```
 
 #### `prompt_ask` contract (this project)
 
 | Condition | Behavior |
 |-----------|----------|
-| `JSON=1` or `QUIET=1` | Return **default** without `read` |
-| Not a TTY (and `INTERACTIVE` ≠ 1) | Return **default** without `read` |
-| TTY interactive | Show current/default via `out_*`, then `read` |
+| `JSON=1` or `QUIET=1` | Return **default** without `read` (via `PROMPT_ASK_VALUE`) |
+| `TTY` is not `1` (and `INTERACTIVE` ≠ 1) | Return **default** without `read` |
+| `TTY=1` interactive | Show current/default via `out_*`, then `read` |
+
+**MUST NOT** `_x=$(prompt_ask …)` — assign `PROMPT_ASK_VALUE` in the current shell. Capturing a `read` helper in `$()` is forbidden (the subshell swallows the answer).
+
+Complete sample:
+
+```sh
+prompt_ask() {
+    : "${JSON:=0}"
+    : "${QUIET:=0}"
+    : "${TTY:=0}"
+    : "${INTERACTIVE:=0}"
+    local message="${1-}"
+    local default="${2-}"
+    PROMPT_ASK_VALUE="${default}"
+    if [ "${JSON}" -eq 1 ] || [ "${QUIET}" -eq 1 ]; then
+        return 0
+    fi
+    if [ "${TTY}" -ne 1 ] && [ "${INTERACTIVE}" -ne 1 ]; then
+        return 0
+    fi
+    out_msg_n "${message}: "
+    local answer=""
+    read -r answer || true
+    if [ -n "${answer}" ]; then
+        PROMPT_ASK_VALUE="${answer}"
+    fi
+}
+```
+
+This product’s `prompt_ask` is defined for future value prompts; live call sites today use `prompt_yes_no` only.
 
 #### `inst_maybe_install` contract (this project)
 
@@ -166,6 +242,20 @@ This dual policy is intentional: **pipe install proceeds**; **destructive uninst
 - **CIAO Principle 3 – Anti-fragile** (https://github.com/cloudgen/ciao): Works under `curl | sh`, CI, and human TTY.  
 - **CIAO Principle 16 – Interactive vs non-interactive awareness** (https://github.com/cloudgen/ciao): First-class mode policy.  
 - **CIAO Principle 4 / CIAO-Lite O · Principle 20 – Over-protect / Protect Against AI** (https://github.com/cloudgen/ciao): Protected `prompt_*` helpers; no raw read regressions.
+
+---
+
+## Under command line for normal user only
+
+When `countdown` runs on Termux, Git Bash, Windows cmd, or the same class (this login only):
+
+| MUST | MUST NOT |
+|------|----------|
+| Keep **normal user privilege** only | Enable **admin privilege** or **dedicated system user privilege** |
+| Prompts as this login (or no hang) | Password-sudo prompts; wrap `apt`/`dnf`; recommend `sudo curl \| sh` |
+| Git Bash / Windows cmd: same ceiling | Invoke Termux `pkg` because Git Bash or Windows cmd was detected |
+
+**This requirement:** interactive install / confirm. `prompt_yes_no` is this-login confirm, not an admin prompt.
 
 ---
 

@@ -170,6 +170,17 @@ else:
     _ec=$?
     assert_eq "TP-STORAGE-02 persist start exit 0" 0 "$_ec"
     assert_contains "TP-STORAGE-02 persist mode note or success" "$_out" "started"
+    _u=$(id -un 2>/dev/null || echo "unknown")
+    if [ -f "${CI_HOME}/.local/${APP_NAME}/${APP_NAME}_${_u}_persist-t" ]; then
+        t_pass "TP-STORAGE-02 persist state under persistence folder"
+    else
+        t_fail "TP-STORAGE-02 persist state missing under ${CI_HOME}/.local/${APP_NAME}"
+    fi
+    if [ -e "${CI_HOME}/.cache/${APP_NAME}" ]; then
+        t_fail "TP-STORAGE-02 persist must not use cache folder (${CI_HOME}/.cache/${APP_NAME})"
+    else
+        t_pass "TP-STORAGE-02 persist did not write cache folder"
+    fi
 
     _out=$(_run list --persist 2>/dev/null)
     _ec=$?
@@ -179,6 +190,12 @@ else:
     _out=$(_run stop --persist persist-t 2>/dev/null)
     _ec=$?
     assert_eq "TP-STORAGE-02 persist stop exit 0" 0 "$_ec"
+
+    if [ -d "${CI_HOME}/.local/${APP_NAME}" ]; then
+        t_pass "TP-STORAGE-02 persist uses persistence folder (~/.local/${APP_NAME})"
+    else
+        t_fail "TP-STORAGE-02 persistence folder missing (${CI_HOME}/.local/${APP_NAME})"
+    fi
 
     # --- TP-STORAGE-01: volatile private dir storage ---
     # Layout: ${VOLATILE|/tmp}/${APP_NAME}-${USER}/${APP_NAME}_${USER}_${name}
@@ -235,6 +252,7 @@ else:
 
     # cleanup
     ci_cleanup_countdown_domain
+    rm -rf "${CI_HOME}/.local/${APP_NAME}" 2>/dev/null || true
     rm -rf "${CI_HOME}/.cache/${APP_NAME}" 2>/dev/null || true
     ci_cleanup_env
 }

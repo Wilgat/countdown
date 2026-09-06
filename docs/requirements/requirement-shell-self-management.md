@@ -14,6 +14,27 @@ It defines lifecycle capabilities and safety rules for this shell project’s se
 
 **Must not confuse with:** OS package managers, domain product start/stop ops, dedicated system-user policy, or non-CLI “self-management.”
 
+### 1.1 Human-facing
+
+**In one sentence:** You install, check, update, and remove the `countdown` program file yourself — without a package manager for routine care.
+
+| You | The other role | Not this |
+|-----|----------------|----------|
+| A normal login who runs `countdown about` / `self-update` / `self-uninstall` | Maintainers who keep the channel URL honest | Domain `start` / `stop` of a named countdown |
+
+**Includes:** `version-check`, `self-update`, `self-uninstall`, `about`.  
+**Excludes:** remaining-time verbs; required `CHECKSUM` in help.
+
+| Surface | What you open | What for |
+|---------|---------------|----------|
+| `countdown about` | command | install paths + folders |
+| `countdown self-uninstall --force` | command | remove the binary |
+
+| You do… | What it means | What you type |
+|---------|---------------|---------------|
+| See where it is installed | About names local/global paths and both storage folders. | `countdown about` |
+| Remove it without a prompt | Non-interactive uninstall needs `--force` or it refuses. | `countdown self-uninstall --force` |
+
 ---
 
 ## 2. Core Rules / Requirements (Mandatory)
@@ -114,7 +135,7 @@ Root may write global install path; non-root uses user path. Do not assume root 
 | **Uninstall steps** | `inst_self_uninstall_determine_bin` → `inst_self_uninstall_confirm_and_remove` → `inst_self_uninstall_cleanup_path` |
 | **PATH ensure** | `path_add_shell` / bash / zsh / fish helpers on user install |
 | **Privilege** | Type 0 only for self-management surface; no dedicated system user |
-| **Version SSOT** | `VERSION` in script config block (product SSOT; currently `VERSION="1.1.2"`) |
+| **Version SSOT** | `VERSION` in script config block (product SSOT; currently `VERSION="1.1.3"`) |
 
 #### Normative acceptance behaviors (this project)
 
@@ -146,6 +167,20 @@ Root may write global install path; non-root uses user path. Do not assume root 
 - **CIAO Principle 10 – Least privilege** (https://github.com/cloudgen/ciao): Type 0 invoker default for CLI lifecycle.  
 - **CIAO Principle 11 – Safe temp files** (https://github.com/cloudgen/ciao): `mktemp`, cleanup on error.  
 - **CIAO Principle 4 / CIAO-Lite O · Principle 20 – Over-protect / Protect Against AI** (https://github.com/cloudgen/ciao): Digest, atomicity, PATH empty-dir check are sacred.
+
+---
+
+## Under command line for normal user only
+
+When `countdown` runs on Termux, Git Bash, Windows cmd, or the same class (this login only):
+
+| MUST | MUST NOT |
+|------|----------|
+| Keep **normal user privilege** only | Enable **admin privilege** or **dedicated system user privilege** |
+| `about` / `self-update` / `self-uninstall` as this login | In-tool `sudo`; wrap `apt`/`dnf`; create a dedicated system user; recommend `sudo curl \| sh` |
+| Git Bash / Windows cmd: same ceiling | Invoke Termux `pkg` because Git Bash or Windows cmd was detected |
+
+**This requirement:** self-management lifecycle. Update and uninstall stay this-login operations on this class.
 
 ---
 

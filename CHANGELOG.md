@@ -8,10 +8,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+---
+
+## [1.1.3] - 2026-09-06
+
 ### Changed
-- README advanced `CHECKSUM=` example now matches current `countdown.sha256` (1.1.2 ship-unit bytes)
-- Reviews residual honesty: domain law cites `requirement-domain-countdown`; L-11 pin closed; L-10 list JSON still open
-- Requirements README Related limited to product `reviews/` peers (no harness mold-path inventory)
+- Type 0 storage is **cache folder and persistence folder** (`requirement-shell-cli-storage` / **`RQ-SHELL-CLI-STORAGE`**)
+- `about` human/JSON names **Cache folder (preferred)/(fallback)** and **Persistence storage** (`${HOME}/.local/countdown`)
+- Domain `--persist` writes `${HOME}/.local/countdown` (no longer `${HOME}/.cache/countdown`)
+- Preferred cache leaf is `/dev/shm/cache/cache-countdown` (not `/dev/shm/countdown-<user>`)
+- **TP-CLI-05** is **have** (was n/a)
+- README H1 is `countdown - Lightweight per-user named countdown timers`; section order matches install/usage kit (Quick Installation includes automatic companion integrity)
+- Help/about people-facing lines lead with **you run this as yourself**, not catalog codes as the only words
+- `prompt_yes_no` / `prompt_ask` consume `TTY` measured at script top (no live `[ -t` policy gate inside the helpers)
+- Housekeeping 2026-08: portable harness from genesis RAM; class residual records no dest approver/fences; L-10 still open
+
+### Added
+- **`RQ-SHELL-SCRIPT-CODING`** — POSIX `/bin/sh` coding-style specialize-in home (without it, portable lessons arrive raw)
+- **§1.1 Human-facing** on every Active requirement
+- **Under command line for normal user only** on related shell requirements
+- Dual mention: domain verbs named on `RQ-SHELL-CLI-INTERFACE` and `RQ-DOMAIN-COUNTDOWN` with invocation samples
+
+### Fixed
+- Requirement law no longer described durable persist as a cache-only path
+
+### Security
+- Regenerated `countdown.sha256` for **1.1.3**
 
 ---
 

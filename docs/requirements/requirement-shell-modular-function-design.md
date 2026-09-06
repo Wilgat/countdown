@@ -14,6 +14,25 @@ It defines modular function organization for a **monolithic yet modular** single
 
 **Core idea:** Modularity is achieved through **clear function boundaries, consistent prefixes, and full CIAO documentation** — **not** by splitting the main CLI into multiple shipped files.
 
+### 1.1 Human-facing
+
+**In one sentence:** `./countdown` stays one file you can `curl | sh`, with named function prefixes so helpers are not anonymous.
+
+| You | The other role | Not this |
+|-----|----------------|----------|
+| A maintainer adding a helper | Operators who never open the script | Splitting the product into many shipped files |
+
+**Includes:** `out_`, `inst_`, `util_`, `app_`, `countdown_`, Protection Zones.  
+**Excludes:** command catalog; remaining-time semantics.
+
+| Surface | What you open | What for |
+|---------|---------------|----------|
+| `./countdown` | single shipped file | prefixes + zones |
+
+| You do… | What it means | What you type |
+|---------|---------------|---------------|
+| Add a countdown helper | Name it `countdown_*`, not a bare `start`. | edit `./countdown` |
+
 ---
 
 ## 2. Core Rules / Requirements (Mandatory)
@@ -39,7 +58,7 @@ Optional multi-file layout under `src/` for future authoring **MAY** exist only 
 |--------|----------|---------|-------------------|
 | `out_` | Output system | All user-facing and machine-readable output | `out_text`, `out_info`, `out_success`, `out_json`, `out_die` |
 | `inst_` | Installation & self-management | Install, self-update, self-uninstall, install detect | `inst_perform_install`, `inst_self_update`, `inst_is_installed` |
-| `util_` | General utilities | Reusable helpers (backup, path resolve, storage) | `util_backup`, `util_resolve_storage`, `util_get_install_bin_path` |
+| `util_` | General utilities | Reusable helpers (backup, path resolve, cache + persistence) | `util_backup`, `util_resolve_storage`, `util_resolve_persistent_storage`, `util_get_install_bin_path` |
 | `app_` | General app CLI surface (product-neutral) | Entry, dispatch, about/help/version presentation | `app_main`, `app_about`, `app_help`, `app_version` |
 | `ver_` | Version comparison | Semantic version handling | `ver_gt`, `ver_check` |
 | `path_` | Shell PATH & environment | PATH manipulation and shell config | `path_add_shell`, `path_add_bashrc` |
@@ -157,7 +176,7 @@ function_name() {
 | `inst_` | `inst_perform_install`, `inst_perform_install_prepare_target`, `inst_perform_install_download_with_checksum`, `inst_perform_install_download_without_checksum`, `inst_perform_install_atomic_install`, `inst_maybe_install`, `inst_self_update`, `inst_self_uninstall` (+ determine_bin / confirm_and_remove / cleanup_path), `inst_is_installed`, `inst_get_version` |
 | `ver_` | `ver_gt`, `ver_check` |
 | `path_` | `path_add_bashrc`, `path_add_zshrc`, `path_add_fish`, `path_add_shell` |
-| `util_` | `util_json_escape`, `util_sha256_file`, `util_fetch_remote_version`, `util_get_install_bin_path`, `util_backup`, `util_resolve_storage`, `util_get_current_shell` |
+| `util_` | `util_json_escape`, `util_sha256_file`, `util_fetch_remote_version`, `util_get_install_bin_path`, `util_backup`, `util_preferred_cache_dir`, `util_fallback_cache_dir`, `util_persistent_storage_dir`, `util_resolve_persistent_storage`, `util_resolve_storage`, `util_get_current_shell` |
 | `prompt_` | `prompt_ask`, `prompt_yes_no` |
 | `countdown_` | `countdown_resolve_base_dir`, `countdown_get_file`, `countdown_sanitize_name`, `countdown_domain_fail`, `countdown_parse_duration`, `countdown_looks_like_duration`, `countdown_start`, `countdown_stop`, `countdown_status`, `countdown_kill_or_reset`, `countdown_list` |
 | `app_` | `app_about`, `app_version` (dispatcher routes `version` here), `app_help`, `app_main` |
@@ -192,6 +211,20 @@ When adding a function to `./countdown`:
 - **CIAO Principle 7 – General Purpose requirement** (https://github.com/cloudgen/ciao): Public helpers document GENERAL PURPOSE.  
 - **CIAO Principle 8 – Reusable function protection** (https://github.com/cloudgen/ciao): DO NOT MODIFY on reusable helpers.  
 - **CIAO Principle 4 / CIAO-Lite O · Principle 20 – Over-protect / Protect Against AI** (https://github.com/cloudgen/ciao): Protection Zones and prefix table defend against AI “cleanup” regressions.
+
+---
+
+## Under command line for normal user only
+
+When `countdown` runs on Termux, Git Bash, Windows cmd, or the same class (this login only):
+
+| MUST | MUST NOT |
+|------|----------|
+| Keep **normal user privilege** only | Enable **admin privilege** or **dedicated system user privilege** |
+| Prefix helpers that run as this login | Add `util_sudo` / Type 1 wrappers; wrap `apt`/`dnf`; recommend `sudo curl \| sh` |
+| Git Bash / Windows cmd: same ceiling | Invoke Termux `pkg` because Git Bash or Windows cmd was detected |
+
+**This requirement:** coding of helpers / prefixes. Do not add an elev prefix family while this product stays normal-user-only.
 
 ---
 

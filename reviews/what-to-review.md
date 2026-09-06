@@ -27,6 +27,7 @@ Living checklist for product and bootstrap-origin reviews.
 | Surface | Review focus | Requirement keys (when Active) |
 |---------|--------------|--------------------------------|
 | CLI dispatch / flags | Commands, `--json` / `--quiet` / `--force` / `--persist`, unknown cmd | `requirement-shell-cli-interface` |
+| CLI storage | Cache folder **and** persistence folder; about labels; `--persist` not under cache | `requirement-shell-cli-storage` |
 | Type O empty argv | Install-ensure not help; local/global already-installed | `requirement-shell-cli-zero-arguments` |
 | Output SSOT | All messages via `out_*`; errors not on success stdout JSON | `requirement-shell-output-requirements` |
 | Self-management | version-check, self-update, self-uninstall, about | `requirement-shell-self-management` |
@@ -36,7 +37,10 @@ Living checklist for product and bootstrap-origin reviews.
 | Modular design | Prefixes, Protection Zones, no bare helpers | `requirement-shell-modular-function-design` |
 | Bootstrap chain | Hop table honesty; no reverse-copy | `requirement-bootstrap-chain` |
 | Domain | start/stop/status/list/kill/reset, duration, storage modes | `requirement-domain-countdown` |
-| README / SECURITY | Install one-liner truth; pin secondary to automatic | product docs |
+| Coding style | Specialize-in home; POSIX `/bin/sh`; no skill-as-law | `requirement-shell-script-coding` |
+| Human-readable law | Every REQ has **§1.1 Human-facing**; people-facing README | all `requirement-*.md` + README |
+| Command line for normal user only | Named section on related shell REQs; Type 1/2 unused on Termux/Git Bash/Windows cmd | related shell REQs |
+| README / SECURITY | Install one-liner truth; pin secondary to automatic; H1 `app-name - short-description`; Last Update | product docs |
 | Tests | Suite maps to law + domain edges | `tests/` + this folder’s test-plan |
 
 ---

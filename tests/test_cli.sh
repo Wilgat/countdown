@@ -2,7 +2,7 @@
 # tests/test_cli.sh — Type 0 CLI surface (PM-SHELL-CLI-TEST-PLAN / TP-CLI-*)
 # =============================================================================
 # Portable families: TP-CLI, TP-CSUM-01/05, TP-U-01.
-# Primary REQs: RQ-SHELL-CLI-INTERFACE, RQ-SHELL-OUTPUT-REQUIREMENTS, RQ-SHELL-AUTOMATIC-CHECKSUM, RQ-SHELL-CLI-ZERO-ARGUMENTS.
+# Primary REQs: RQ-SHELL-CLI-INTERFACE, RQ-SHELL-CLI-STORAGE, RQ-SHELL-OUTPUT-REQUIREMENTS, RQ-SHELL-AUTOMATIC-CHECKSUM, RQ-SHELL-CLI-ZERO-ARGUMENTS.
 # Labels MUST include TP-IDs (policy-harness-id-notation / PM-SHELL-CLI-TEST-PLAN).
 # =============================================================================
 
@@ -79,14 +79,30 @@ run_test_cli() {
     assert_contains "TP-CLI-04 about --json app" "$_out" '"app":"countdown"'
     assert_not_contains "TP-CLI-04 TP-CSUM-05 about --json must not include CHECKSUM" "$_out" "CHECKSUM"
 
-    # --- TP-CLI-05: shell about storage fields ---
-    # countdown product: about JSON has no effective_storage/storage_dir (domain storage is
-    # owned by RQ-DOMAIN-COUNTDOWN / countdown_* paths). Mark shell storage mold fields N/A;
-    # domain suite proves volatile/persistent storage (TP-STORAGE-01).
-    _out=$(sh "${SCRIPT}" --json about 2>/dev/null)
-    assert_contains "TP-CLI-05 about --json type present (shell storage fields n/a)" "$_out" '"type":"about"'
-    assert_not_contains "TP-CLI-05 countdown about has no shell storage_dir field (domain owns storage)" "$_out" '"storage_dir"'
-    t_pass "TP-CLI-05 shell storage resolve n/a for countdown (see TP-STORAGE-01)"
+    # --- TP-CLI-05: about cache folder AND persistence folder ---
+    ci_isolated_env
+    _out=$(HOME="${CI_HOME}" XDG_CACHE_HOME="${CI_HOME}/.cache" sh "${SCRIPT}" --json about 2>/dev/null)
+    _ec=$?
+    assert_eq "TP-CLI-05 about --json exit 0" 0 "$_ec"
+    assert_contains "TP-CLI-05 about --json cache_preferred" "$_out" '"cache_preferred":"/dev/shm/cache/cache-countdown"'
+    assert_contains "TP-CLI-05 about --json cache_fallback" "$_out" "cache-countdown"
+    assert_contains "TP-CLI-05 about --json persistence_storage" "$_out" "${CI_HOME}/.local/countdown"
+    assert_contains "TP-CLI-05 about --json effective_storage" "$_out" '"effective_storage"'
+    assert_not_contains "TP-CLI-05 about --json has no CHECKSUM" "$_out" "CHECKSUM"
+    assert_not_contains "TP-CLI-05 about --json has no storage_dir alias" "$_out" '"storage_dir"'
+
+    _out=$(HOME="${CI_HOME}" XDG_CACHE_HOME="${CI_HOME}/.cache" sh "${SCRIPT}" about 2>/dev/null)
+    assert_contains "TP-CLI-05 about human Cache folder (preferred)" "$_out" "Cache folder (preferred)"
+    assert_contains "TP-CLI-05 about human Cache folder (fallback)" "$_out" "Cache folder (fallback)"
+    assert_contains "TP-CLI-05 about human Persistence storage" "$_out" "Persistence storage"
+    assert_contains "TP-CLI-05 about human preferred path" "$_out" "/dev/shm/cache/cache-countdown"
+    assert_contains "TP-CLI-05 about human persistence path" "$_out" "${CI_HOME}/.local/countdown"
+    if [ -d "${CI_HOME}/.local/countdown" ]; then
+        t_pass "TP-CLI-05 persistence folder created"
+    else
+        t_fail "TP-CLI-05 persistence folder missing (${CI_HOME}/.local/countdown)"
+    fi
+    ci_cleanup_env
 
     # --- TP-CLI-06: unknown command ---
     _err=$(sh "${SCRIPT}" no-such-command 2>&1 >/dev/null)

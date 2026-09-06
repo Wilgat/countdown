@@ -10,7 +10,22 @@ This requirement is the **Single Source of Truth (SSOT)** for the product’s **
 **SSOT rule:** For a specialized product that has a domain surface, **exactly one** Active domain-requirements file is the **current** domain SSOT (this file, for this project). Additional domain files **MUST NOT** be invented in parallel without superseding this one and updating `docs/requirements/index.md`. **Exception:** [genesis template](../terminologies/genesis-template.md) state — no specialized domain law is required (registry may be empty).
 
 **Scope:** Domain CLI verbs, duration/remaining-time semantics, names, storage modes, domain JSON/human contracts, domain rows in `help` / `about`.  
-**Out of scope (peer shell law):** Install, version-check, self-update, self-uninstall, empty-argv Type O, automatic checksum, output SSOT mechanics (`out_*` still used), modular prefix table ownership.
+**Out of scope (peer shell law):** Install, version-check, self-update, self-uninstall, empty-argv Type O, automatic checksum, output SSOT mechanics (`out_*` still used), modular prefix table ownership, Type 0 **cache folder** resolve (`requirement-shell-cli-storage`).
+
+### 1.1 Human-facing
+
+**In one sentence:** You start a named countdown with a duration; `--persist` keeps it in the **persistence folder**, not the cache folder.
+
+| You | The other role | Not this |
+|-----|----------------|----------|
+| A normal login who runs `countdown start` / `stop` / `status` | Maintainers who keep remaining-time law honest | Type 0 install/update (peer shell files) |
+
+**Includes:** duration grammar, remaining time, `--persist` into `${HOME}/.local/countdown`.  
+**Excludes:** putting durable countdown files under `${HOME}/.cache/countdown`; treating Type 0 cache as persist.
+
+| You do… | What it means | What you type |
+|---------|---------------|---------------|
+| Keep a countdown across reboot | State goes in the **persistence folder** (`${HOME}/.local/countdown`). The **cache folder** is scratch only. | `countdown start --persist pomodoro 25m` |
 
 ---
 
@@ -94,6 +109,19 @@ Domain law **MUST** define (when claimed):
 
 **Global domain flag:** `--persist` → persistent storage for domain ops.
 
+#### Invocation samples (dual mention — topic-owner)
+
+| Verb | What you type |
+|------|----------------|
+| `start` | `countdown start work 25m` |
+| `start` persist | `countdown start --persist pomodoro 25m` |
+| `status` | `countdown status work` |
+| `stop` | `countdown stop work` |
+| `list` | `countdown list` |
+| `list` persist | `countdown list --persist` |
+| `kill` | `countdown kill work` |
+| `reset` | `countdown reset work` |
+
 #### Specialized features (countdown)
 
 | Feature | Law |
@@ -101,8 +129,9 @@ Domain law **MUST** define (when claimed):
 | **Semantics** | **Remaining time** from start+duration target (not count-up elapsed like timer) |
 | **Duration grammar** | Forms such as `25m`, `90s`, `1h`, `1h30m`, `2h15m45s`, or plain seconds number; invalid/zero → `invalid_duration`; missing → `missing_duration` |
 | **Names** | Default `default`; path-safe denylist (path seps, shell metachar, space/tab); CR/LF rejected; `invalid_name` |
-| **Volatile storage** | Private per-user dir under volatile root (e.g. `/dev/shm/${APP_NAME}-${USERNAME}`) with restrictive mode when possible |
-| **Persistent storage** | Under cache dir (e.g. XDG cache / `${HOME}/.cache/${APP_NAME}`) or private `/tmp` fallback |
+| **Volatile storage** | Private per-user dir under volatile root (e.g. `/dev/shm/${APP_NAME}-${USERNAME}`) with restrictive mode when possible. This is **not** the Type 0 cache folder. |
+| **Cache folder** | Type 0 scratch — owned by `requirement-shell-cli-storage` (preferred `/dev/shm/cache/cache-${APP_NAME}`). **MUST NOT** store `--persist` countdown state here. |
+| **Persistence folder** | Durable `--persist` state under `${HOME}/.local/${APP_NAME}` (not `${HOME}/.local/bin`, not XDG cache / `${HOME}/.cache/${APP_NAME}`). Private `/tmp/${APP_NAME}-${USERNAME}-persistent` fallback when `$HOME` is unusable. |
 | **Isolation** | Per-user; not shared flat world-writable name-only files as sole isolation |
 | **vs timer** | Separate product; help may note timer is count-up, countdown is remaining-time |
 
@@ -143,6 +172,20 @@ Domain suite `tests/test_countdown_domain.sh` (via `tests/run.sh`) **MUST** cove
 
 ---
 
+## Under command line for normal user only
+
+When `countdown` runs on Termux, Git Bash, Windows cmd, or the same class (this login only):
+
+| MUST | MUST NOT |
+|------|----------|
+| Keep **normal user privilege** only | Enable **admin privilege** or **dedicated system user privilege** |
+| `start` / `stop` / `status` as this login | In-tool `sudo`; wrap `apt`/`dnf`; create a dedicated system user; recommend `sudo curl \| sh` |
+| Git Bash / Windows cmd: same ceiling | Invoke Termux `pkg` because Git Bash or Windows cmd was detected |
+
+**This requirement:** domain start/stop. Named countdowns stay this-login files. Do not store them under a dedicated system user.
+
+---
+
 ## 3. Design Principles (CIAO / CIAO-Lite)
 
 - **Caution:** Validate before I/O; exclusive create for start.  
@@ -164,7 +207,8 @@ Domain suite `tests/test_countdown_domain.sh` (via `tests/run.sh`) **MUST** cove
 4. Put domain feature law into bootstrap origin `timer` / `selfmanaged` by reverse-copy.  
 5. Add `CHECKSUM` to help/about domain or Type 0 about.  
 6. Leave domain SSOT hollow (`TODO` pillars) while Status Active.  
-7. At **genesis template**, invent a filled domain SSOT as if a product were specialized.
+7. At **genesis template**, invent a filled domain SSOT as if a product were specialized.  
+8. Store `--persist` countdown state only under a **cache folder** (XDG cache / `${HOME}/.cache/${APP_NAME}`) and omit the **persistence folder** (`${HOME}/.local/${APP_NAME}`).
 
 **Violating this rule is a critical domain-law / SSOT regression.**
 
@@ -191,6 +235,7 @@ A domain change for countdown is **not done** if any fail:
 | `docs/requirements/requirement-shell-modular-function-design.md` | Prefix table; domain prefix `countdown_*` |
 | `docs/requirements/requirement-shell-output-requirements.md` | `out_*` channels |
 | `docs/requirements/requirement-bootstrap-chain.md` | Leaf owns domain defects |
+| `docs/requirements/requirement-shell-cli-storage.md` | Type 0 cache folder **and** persistence folder; domain `--persist` uses the persistence folder |
 | `./countdown` | Implementation |
 | `tests/test_countdown_domain.sh` | Domain suite |
 
@@ -218,6 +263,6 @@ A domain change for countdown is **not done** if any fail:
 | **TP-PAYLOAD-*** Type O-P scaffold | n/a — not Type O-P payload product | n/a |
 
 
-**Last Updated**: 2026-07-16  
+**Last Updated**: 2026-08-30  
 **Owner**: countdown project maintainers  
 **Alignment**: Registry `docs/requirements/index.md`; peer shell requirements in §6; CIAO (https://github.com/cloudgen/ciao); CIAO-Lite (https://github.com/cloudgen/ciao-lite).

@@ -11,6 +11,22 @@ Declare this workspace as a **software-development** project class and hold the 
 
 This file is **class law + residual SSOT**, not a second copy of Type 0 lifecycle, checksum, output, domain pillars, or storage tables (those stay on peer requirements).
 
+### 1.1 Human-facing
+
+**This file says** this folder is a **shippable countdown program**, not a blank template and not a server allowlist.
+
+| You | The other role | Not this |
+|-----|----------------|----------|
+| A normal login who installs and runs `countdown` | Maintainers who keep class + stack facts honest here | A dest approval machine or inbound request queue |
+
+**Includes:** primary language (`posix-sh`), how the program is tested, that there is a ship unit.  
+**Excludes:** inventing an approver or dest fence so the class table “looks complete”; duplicating install/domain MUST tables that live on peer files.
+
+| Step | What it means | What you type |
+|------|---------------|---------------|
+| Read class | This workspace is software you can ship. Stack facts not owned by a peer file live here. | open `docs/requirements/requirement-class-software-dev.md` |
+| Do not invent dest | Countdown has no dest inbound folder and no dedicated approver account. Residual says **none**, honestly. | do not add `requirement-actor-role-subject-approver` unless a dest appears |
+
 ---
 
 ## 2. Core Rules (Mandatory)
@@ -87,6 +103,9 @@ This file is **class law + residual SSOT**, not a second copy of Type 0 lifecycl
 | **Ship unit / install** | yes — repo root `./countdown` + companion `countdown.sha256`; Type 0 online install (peer shell REQs) |
 | **Product version SSOT** | `VERSION="…"` hard-assign in `./countdown` (align with README Version badge + CHANGELOG) |
 | **Domain SSOT** | `requirement-domain-countdown` — named-countdown ops beyond Type 0 |
+| **Actor / role / subject / approver** | **considered — no dest approver and no approval subject** (no dest approval machine) |
+| **Dest fence conditions** | **considered — no dest fence conditions** (no dest inbound / approve / reject queue) |
+| **Coding-style related REQ** | `requirement-shell-script-coding` / **`RQ-SHELL-SCRIPT-CODING`** (specialize-in home; without it, portable lessons arrive raw) |
 
 **Residual ownership table:**
 
@@ -103,7 +122,11 @@ This file is **class law + residual SSOT**, not a second copy of Type 0 lifecycl
 | Idempotency / re-run safety | `requirement-shell-idempotency` | Do not duplicate |
 | Interactive vs non-interactive | `requirement-shell-interactive-vs-noninteractive` | Do not duplicate |
 | Modular prefixes / single-file layout | `requirement-shell-modular-function-design` | Do not duplicate |
-| Named-countdown domain (four pillars) | `requirement-domain-countdown` | Do not duplicate |
+| Type 0 cache folder + persistence folder | `requirement-shell-cli-storage` | Do not duplicate; storage is **both** folders |
+| Named-countdown domain (four pillars) | `requirement-domain-countdown` | Do not duplicate; `--persist` uses persistence folder |
+| Actor / role / subject / approver | **this file** (residual) | **considered — no dest approver and no approval subject** — MUST NOT invent an approver |
+| Dest fence conditions | **this file** (residual) | **considered — no dest fence conditions** — MUST NOT invent a dest fence |
+| Coding-style related REQ | `requirement-shell-script-coding` | Specialize-in home; **MUST NOT** treat coding skills or law molds as product law |
 
 ---
 
@@ -169,7 +192,9 @@ This file is **class law + residual SSOT**, not a second copy of Type 0 lifecycl
 | `requirement-shell-idempotency` | Re-run safety |
 | `requirement-shell-interactive-vs-noninteractive` | Mode policy |
 | `requirement-shell-modular-function-design` | Prefixes / single-file modularity |
+| `requirement-shell-cli-storage` | Cache folder **and** persistence folder |
 | `requirement-domain-countdown` | Named-countdown domain product law |
+| `requirement-shell-script-coding` | POSIX `/bin/sh` coding-style specialize-in home |
 | `docs/requirements/index.md` | Registry SSOT |
 
 ---
@@ -178,6 +203,8 @@ This file is **class law + residual SSOT**, not a second copy of Type 0 lifecycl
 
 | Date | Status | Note |
 |------|--------|------|
+| 2026-09-06 | Active | Residual points at `requirement-shell-script-coding` (coding-style specialize-in home) |
+| 2026-08-30 | Active | Residual points at `requirement-shell-cli-storage` (cache folder **and** persistence folder) |
 | 2026-07-19 | Active | Class gate fix (software-development missing Active class REQ) |
 
 ---
@@ -196,6 +223,6 @@ This file is **class law + residual SSOT**, not a second copy of Type 0 lifecycl
 | Full suite green | `./tests/run.sh` | have |
 
 
-**Last Updated**: 2026-07-19  
+**Last Updated**: 2026-09-06  
 **Owner**: countdown maintainers  
 **Alignment**: software-development class; peer shell + domain REQs; dual policies; registry discipline.

@@ -10,6 +10,7 @@
 # Product domain: start / stop / status / list / kill / reset named countdowns with duration.
 # Project requirements (docs/requirements/ only — never cite templates here):
 # - requirement-shell-cli-interface.md
+# - requirement-shell-cli-storage.md  (cache folder AND persistence folder)
 # - requirement-shell-cli-zero-arguments.md  (Type O empty argv = install-ensure)
 # - requirement-shell-idempotency.md
 # - requirement-shell-self-management.md
@@ -17,6 +18,7 @@
 # - requirement-shell-output-requirements.md
 # - requirement-shell-interactive-vs-noninteractive.md
 # - requirement-shell-automatic-checksum.md
+# - requirement-domain-countdown.md
 # Plus CIAO Protection Zones and "DO NOT MODIFY" rules.
 #
 # Philosophy: CIAO (Caution • Intentional • Anti-fragile • Over-engineered)
@@ -41,10 +43,10 @@ set -u  # Treat unset variables as error (defensive)
 : "${APP_NAME:=countdown}"
 : "${APP_DESC:=Lightweight per-user named countdown timers (volatile or persistent)}"
 : "${SHORT_DESCRIPTION:=${APP_DESC}}"
-: "${DESCRIPTION:=POSIX /bin/sh Type 0 CLI: install, version-check, self-update, self-uninstall, about, plus countdown start/stop/status/list with duration.}"
-# Product version SSOT (specialized 1.1.2 from timer architecture + countdown domain). Extractors use: grep '^VERSION="'
-VERSION="1.1.2"
-: "${VERSION:=1.1.2}"
+: "${DESCRIPTION:=POSIX /bin/sh CLI you run as yourself: install, version-check, self-update, self-uninstall, about, plus countdown start/stop/status/list with duration.}"
+# Product version SSOT (specialized 1.1.3: cache folder AND persistence folder). Extractors use: grep '^VERSION="'
+VERSION="1.1.3"
+: "${VERSION:=1.1.3}"
 
 # Runtime flags (safe defaults)
 : "${QUIET:=0}"
@@ -91,9 +93,12 @@ fi
 
 [ -t 0 ] && [ -t 1 ] && TTY=1
 USERNAME="$(id -un 2>/dev/null || echo "unknown")"
-# Domain storage SSOT (countdown): volatile RAM vs persistent cache
+# Domain storage SSOT (countdown): volatile RAM vs persistence folder
+# (not the Type 0 cache folder — requirement-shell-cli-storage.md).
+: "${HOME:=/tmp}"
+: "${XDG_CACHE_HOME:=${HOME}/.cache}"
 : "${VOLATILE_DIR:=/dev/shm}"
-: "${PERSISTENT_DIR:=${XDG_CACHE_HOME:-${HOME}/.cache}/${APP_NAME}}"
+: "${PERSISTENT_DIR:=${HOME}/.local/${APP_NAME}}"
 # Privilege SSOT for recommended install path / bin choice (set -u safe).
 # Re-detected inside inst_perform_install before mutating INSTALL_PATH.
 if [ "$(id -u 2>/dev/null || echo 1)" -eq 0 ]; then
@@ -1981,74 +1986,106 @@ util_backup() {
 }
 
 # =============================================================================
-# util_resolve_storage() - Storage resolver
+# Type 0 storage: cache folder AND persistence folder
 # =============================================================================
 #
 # GENERAL PURPOSE:
-# Returns the best available volatile storage directory for prompt files.
-# Prefers /dev/shm (fastest, in-memory) → /tmp → fallback to XDG_CACHE_HOME.
-# All paths include ${USERNAME} to isolate per-user storage.
-#
-# Safe Variable Defaults
+# Isolated scratch/cache root plus durable per-user persistence.
+# Cache prefers /dev/shm/cache/cache-${APP_NAME} → /tmp/cache/cache-${APP_NAME}
+# → ${XDG_CACHE_HOME}/cache-${APP_NAME}. Persistence is ${HOME}/.local/${APP_NAME}.
+# Create chosen leaf before echo. Sticky …/cache/ parent (1777 when creating).
 #
 # CIAO PRINCIPLES APPLIED:
-# - Caution: Must work correctly when the same computer is used by multiple
-#   different users (normal user, sudo, root, shared servers, containers).
-# - Intentionality: Never allow one user's files to be readable/writable by
-#   another user. Every directory creation must be ownership-aware.
-# - Anti-fragile: Survive permission conflicts and multi-user environments.
+# - Caution: Never assume /dev/shm, /tmp, or HOME exist or are writable.
+# - Intentional: Storage = cache folder AND persistence folder (about says both).
+# - Anti-fragile: Fall through when a cache leaf is not writable.
+# - Over-protect: Do not use /dev/shm/${APP_NAME}[-${USERNAME}] as cache;
+#   do not use ${HOME}/.local/bin as persistence.
 #
-# CRITICAL WARNING - MULTI-USER PROBLEM AI FREQUENTLY OVERLOOKS:
-# Many good applications on a computer are run by different users over time
-# (e.g. normal user → sudo → another login account). 
+# ALIGNMENT (live requirements only):
+# - requirement-shell-cli-storage.md
+# - requirement-shell-output-requirements.md  (class B return-via-stdout)
 #
-# AI assistants often simply "add mkdir -p" when solving a storage task without
-# considering ownership and cross-user write privilege. This approach is
-# untested and problematic — it can create directories owned by one user that
-# another user cannot read/write, or allow unintended access between users.
+# !!! DO NOT MODIFY OR SIMPLIFY THESE HELPERS !!!
+# Rewriting to a shared world-writable dump, or dropping persistence, is forbidden.
 #
-# That is why we intentionally isolate folders per user (${APP_NAME}-${USERNAME})
-# and why any change to this function must preserve strict per-user isolation.
-# Rewriting this with a generic shared folder is forbidden and has caused
-# permission bugs in the past.
-#
-# !!! DO NOT MODIFY OR SIMPLIFY THIS FUNCTION !!!
-# Designed to be reusable in other projects.
-#
-# ECHO EXCEPTION (class B – function return-via-stdout):
-# echo of storage paths is a data return for $(util_resolve_storage) capture,
-# not a product user message. Failures use out_die.
-# See requirement-shell-output-requirements.md §2.1.1.
+# PRINTF EXCEPTION (class B – function return-via-stdout):
+# echo/printf of paths is a data return for $(…) capture, not a product message.
+# Failures use out_die. See requirement-shell-output-requirements.md §2.1.1.
 #
 # Lessons Learned (CIAO Reflection):
 # 2026-07-13: STORAGE_DIR was bare/unset on third fallback (INC-20260713-001 P1).
-# 2026-07-14: Third fallback uses XDG_CACHE_HOME / HOME/.cache / /tmp with
-#             per-user ${APP_NAME}-${USERNAME} isolation under set -u.
+# 2026-07-14: Third fallback used XDG_CACHE_HOME with per-user isolation.
+# 2026-08-30: Cache leaf is cache-${APP_NAME} under …/cache/; persistence is
+#             ${HOME}/.local/${APP_NAME} (not cache, not bin).
 #
-# Last reviewed: 2026-07-14
+# Last updated: 2026-08-30
 # =============================================================================
-util_resolve_storage() {
-    # --- Safe Variable Defaults ----
-    # Defensive defaults - never assume globals are set
-    : "${USERNAME:=unknown}"
-    : "${APP_NAME:=app}"
+
+util_preferred_cache_dir() {
+    : "${APP_NAME:=countdown}"
+    printf '%s' "/dev/shm/cache/cache-${APP_NAME}"
+}
+
+util_fallback_cache_dir() {
+    : "${APP_NAME:=countdown}"
     : "${HOME:=/tmp}"
     : "${XDG_CACHE_HOME:=${HOME}/.cache}"
+    printf '%s' "${XDG_CACHE_HOME}/cache-${APP_NAME}"
+}
 
+util_persistent_storage_dir() {
+    : "${APP_NAME:=countdown}"
+    : "${HOME:=/tmp}"
+    printf '%s' "${HOME}/.local/${APP_NAME}"
+}
+
+util_resolve_persistent_storage() {
+    : "${APP_NAME:=countdown}"
+    : "${HOME:=/tmp}"
+    _persist=$(util_persistent_storage_dir)
+    case "${_persist}" in
+        */.local/bin|*/.local/bin/)
+            out_die "Persistence storage must not be the install bin directory ${_persist}"
+            ;;
+    esac
+    if ! mkdir -p "${_persist}" 2>/dev/null || [ ! -w "${_persist}" ]; then
+        out_die "Cannot create persistence folder ${_persist}. Next: check that HOME is a writable directory, then rerun."
+    fi
+    echo "${_persist}"
+    unset _persist
+    return 0
+}
+
+util_resolve_storage() {
+    : "${APP_NAME:=countdown}"
+    : "${HOME:=/tmp}"
+    : "${XDG_CACHE_HOME:=${HOME}/.cache}"
+    : "${STORAGE_DIR:=${XDG_CACHE_HOME}/cache-${APP_NAME}}"
+
+    _storage_candidate=""
     if [ -d "/dev/shm" ] && [ -w "/dev/shm" ]; then
-        echo "/dev/shm/${APP_NAME}-${USERNAME}"
-        return 0
+        mkdir -m 1777 -p /dev/shm/cache 2>/dev/null || mkdir -p /dev/shm/cache 2>/dev/null || true
+        _pref="/dev/shm/cache/cache-${APP_NAME}"
+        if mkdir -p "${_pref}" 2>/dev/null && [ -w "${_pref}" ]; then
+            _storage_candidate="${_pref}"
+        fi
     fi
-    if [ -w "/tmp" ]; then
-        echo "/tmp/${APP_NAME}-${USERNAME}"
-        return 0
+    if [ -z "${_storage_candidate}" ] && [ -w "/tmp" ]; then
+        mkdir -m 1777 -p /tmp/cache 2>/dev/null || mkdir -p /tmp/cache 2>/dev/null || true
+        _tmpc="/tmp/cache/cache-${APP_NAME}"
+        if mkdir -p "${_tmpc}" 2>/dev/null && [ -w "${_tmpc}" ]; then
+            _storage_candidate="${_tmpc}"
+        fi
     fi
-    # XDG-style per-user cache isolation (set -u safe)
-    : "${STORAGE_DIR:=${XDG_CACHE_HOME}/${APP_NAME}-${USERNAME}}"
-    if ! mkdir -p "${STORAGE_DIR}" 2>/dev/null; then
-        out_die "Cannot create storage directory ${STORAGE_DIR}"
+    if [ -z "${_storage_candidate}" ]; then
+        _storage_candidate="${STORAGE_DIR}"
+        if ! mkdir -p "${_storage_candidate}" 2>/dev/null || [ ! -w "${_storage_candidate}" ]; then
+            out_die "Cannot create cache folder ${_storage_candidate}. Next: set HOME to a writable directory, then rerun."
+        fi
     fi
-    echo "${STORAGE_DIR}"
+    echo "${_storage_candidate}"
+    unset _storage_candidate _pref _tmpc
     return 0
 }
 
@@ -2099,8 +2136,9 @@ prompt_ask() {
         return 0
     fi
 
-    # Must have a real TTY (unless caller explicitly set INTERACTIVE=1)
-    if ! [ -t 0 ] || ! [ -t 1 ]; then
+    # Consume TTY SSOT (measured outside functions). INTERACTIVE=1 overrides.
+    : "${TTY:=0}"
+    if [ "${TTY}" -ne 1 ]; then
         if [ "${INTERACTIVE:-0}" -ne 1 ]; then
             printf '%s' "${default}"
             return 0
@@ -2170,8 +2208,9 @@ prompt_yes_no() {
         return 1   # treat as "no" in non-interactive modes
     fi
 
-    # Must be interactive TTY
-    if ! [ -t 0 ] || ! [ -t 1 ]; then
+    # Consume TTY SSOT (measured outside functions)
+    : "${TTY:=0}"
+    if [ "${TTY}" -ne 1 ]; then
         return 1
     fi
 
@@ -2250,7 +2289,7 @@ util_get_current_shell() {
 # =============================================================================
 #
 # GENERAL PURPOSE:
-# Per-user named countdowns (volatile /dev/shm or persistent cache). File format:
+# Per-user named countdowns (volatile /dev/shm or persistence folder). File format:
 #   start_time target_time  (epoch seconds). Remaining = target_time - now.
 # All output goes through out_* SSOT. Lifecycle stays on inst_*/app_* from bootstrap.
 #
@@ -2270,7 +2309,7 @@ countdown_resolve_base_dir() {
     : "${HOME:=/tmp}"
     : "${QUIET:=0}"
     : "${JSON:=0}"
-    : "${PERSISTENT_DIR:=${XDG_CACHE_HOME:-${HOME}/.cache}/${APP_NAME}}"
+    : "${PERSISTENT_DIR:=${HOME}/.local/${APP_NAME}}"
 
     if [ "$requested_mode" = "volatile" ]; then
         # Per-user private directory (L-02) — not flat files in world-writable /dev/shm|/tmp.
@@ -2303,8 +2342,13 @@ countdown_resolve_base_dir() {
         fi
     else
         if [ -n "${HOME-}" ] && [ -d "${HOME}" ] && [ -w "${HOME}" ]; then
-            base_dir="${PERSISTENT_DIR}"
+            if [ -n "${PERSISTENT_STORAGE_DIR-}" ]; then
+                base_dir="${PERSISTENT_STORAGE_DIR}"
+            else
+                base_dir="${PERSISTENT_DIR}"
+            fi
             mkdir -p "$base_dir" 2>/dev/null || true
+            chmod 700 "$base_dir" 2>/dev/null || true
         else
             base_dir="/tmp/${APP_NAME}-${USERNAME}-persistent"
             if ! mkdir -p "$base_dir" 2>/dev/null || [ ! -w "$base_dir" ]; then
@@ -2704,7 +2748,7 @@ app_about() {
     : "${QUIET:=0}"
     : "${APP_NAME:=countdown}"
     # Version comes from global SSOT (VERSION="1.0.0" near top); default only if unset
-    : "${VERSION:=1.1.2}"
+    : "${VERSION:=1.1.3}"
     : "${GLOBAL_BIN:=/usr/local/bin}"
     : "${USER_BIN:=${HOME}/.local/bin}"
     : "${SCRIPT_URL:=}"
@@ -2733,6 +2777,14 @@ app_about() {
         local current_user
         current_user="$(id -un 2>/dev/null || echo "unknown")"
 
+        : "${HOME:=/tmp}"
+        : "${XDG_CACHE_HOME:=${HOME}/.cache}"
+        : "${EFFECTIVE_STORAGE_DIR:=$(util_resolve_storage)}"
+        : "${PERSISTENT_STORAGE_DIR:=$(util_resolve_persistent_storage)}"
+        _cache_pref=$(util_preferred_cache_dir)
+        _cache_fb=$(util_fallback_cache_dir)
+        _persist=$(util_persistent_storage_dir)
+
         out_json "about" "" \
             "app" "${APP_NAME}" \
             "version" "${VERSION}" \
@@ -2741,7 +2793,12 @@ app_about() {
             "local_version" "${local_ver}" \
             "shell" "${current_shell}" \
             "interactive" "${interactive}" \
-            "user" "${current_user}"
+            "user" "${current_user}" \
+            "cache_preferred" "${_cache_pref}" \
+            "cache_fallback" "${_cache_fb}" \
+            "persistence_storage" "${_persist}" \
+            "effective_storage" "${EFFECTIVE_STORAGE_DIR}"
+        unset _cache_pref _cache_fb _persist
         return 0
     fi
 
@@ -2782,6 +2839,16 @@ app_about() {
 
     out_empty_line
 
+    : "${HOME:=/tmp}"
+    : "${XDG_CACHE_HOME:=${HOME}/.cache}"
+    : "${EFFECTIVE_STORAGE_DIR:=$(util_resolve_storage)}"
+    : "${PERSISTENT_STORAGE_DIR:=$(util_resolve_persistent_storage)}"
+    out_info "Cache folder (preferred): $(util_preferred_cache_dir)"
+    out_info "Cache folder (fallback):  $(util_fallback_cache_dir)"
+    out_info "Persistence storage:      $(util_persistent_storage_dir)"
+
+    out_empty_line
+
     local current_user
     current_user="$(id -un 2>/dev/null || echo "unknown")"
     out_info "Current user:      ${current_user}"
@@ -2789,7 +2856,7 @@ app_about() {
     if [ "$(id -u)" -eq 0 ]; then
         out_success "Execution context: root (global install path available)"
     else
-        out_info "Execution context: normal user (Type 0 CLI self-management)"
+        out_info "Execution context: you run this as yourself (normal user privilege)"
     fi
 
     out_empty_line
@@ -2799,7 +2866,8 @@ app_about() {
 
     out_info "Current shell:     ${current_shell}"
 
-    if [ -t 1 ]; then
+    : "${TTY:=0}"
+    if [ "${TTY}" -eq 1 ]; then
         out_info "TTY / Interactive: yes"
     else
         out_info "TTY / Interactive: no (non-interactive / scripted mode)"
@@ -2822,7 +2890,7 @@ app_about() {
 
 app_version() {
     : "${APP_NAME:=countdown}"
-    : "${VERSION:=1.1.2}"
+    : "${VERSION:=1.1.3}"
     : "${JSON:=0}"
     if [ "${JSON}" -eq 1 ]; then
         # Same machine contract as historical app_main inline path
@@ -2847,7 +2915,7 @@ app_version() {
 
 app_help() {
     : "${SHORT_DESCRIPTION:=${APP_DESC:-Lightweight per-user named countdown timers (volatile or persistent)}}"
-    : "${DESCRIPTION:=POSIX /bin/sh Type 0 CLI: install, version-check, self-update, self-uninstall, about, plus countdown start/stop/status/list with duration.}"
+    : "${DESCRIPTION:=POSIX /bin/sh CLI you run as yourself: install, version-check, self-update, self-uninstall, about, plus countdown start/stop/status/list with duration.}"
 
     if [ "${JSON}" -eq 1 ]; then
         out_json "success" "Help text available in human-readable mode. Run without --json." \
@@ -2881,7 +2949,7 @@ app_help() {
     out_plain "  25m · 90s · 1h · 1h30m · 2h15m45s · 45 (plain number = seconds)"
     out_empty_line
 
-    out_info "Self-Management (Type 0 - any user):"
+    out_info "Self-Management (any user):"
     out_plain "  install              Install ${APP_NAME} (root→global, user→~/.local/bin)"
     out_plain "  version              Show current version"
     out_plain "  about                Show detailed diagnostics"
@@ -2892,7 +2960,7 @@ app_help() {
     out_empty_line
 
     out_info "Global Options:"
-    out_plain "  --persist            Use persistent storage (survives reboot) for countdown ops"
+    out_plain "  --persist            Use persistence folder (~/.local/countdown) for countdown ops"
     out_plain "  --quiet, -q          Suppress info/success (errors and warnings still shown)"
     out_plain "  --json               Machine-readable JSON (implies --quiet)"
     out_plain "  --force              Force reinstall / skip uninstall confirm / allow downgrade"
@@ -2974,6 +3042,17 @@ app_main() {
     : "${DEBUG:=0}"
     : "${FORCE:=0}"
     : "${FORCE_REINSTALL:=0}"
+    : "${HOME:=/tmp}"
+    : "${APP_NAME:=countdown}"
+    : "${XDG_CACHE_HOME:=${HOME}/.cache}"
+
+    # Type 0 storage wire: cache folder AND persistence folder
+    # (requirement-shell-cli-storage.md). TMPDIR inherits cache isolation.
+    EFFECTIVE_STORAGE_DIR=$(util_resolve_storage)
+    PERSISTENT_STORAGE_DIR=$(util_resolve_persistent_storage)
+    STORAGE_DIR="${EFFECTIVE_STORAGE_DIR}"
+    TMPDIR="${EFFECTIVE_STORAGE_DIR}"
+    export EFFECTIVE_STORAGE_DIR PERSISTENT_STORAGE_DIR STORAGE_DIR TMPDIR
 
     # === ZERO-ARG = Type O install-ensure (curl | sh contract) ===
     # Product type: Type O (online-install) — not Type N help-default.

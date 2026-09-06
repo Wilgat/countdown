@@ -12,6 +12,26 @@ This requirement is the **project Single Source of Truth** for **automatic compa
 
 **Must not confuse with:** Embedding a hash of `./countdown` *inside* `./countdown`; requiring operators to set `CHECKSUM` for every install; claiming independent host authenticity from same-channel SHA-256 alone.
 
+### 1.1 Human-facing
+
+**In one sentence:** When you install or self-update, the program itself downloads a SHA-256 sidecar, shows the link and the expected value, and says match / mismatch / missing.
+
+| You | The other role | Not this |
+|-----|----------------|----------|
+| A normal login who installs `countdown` | Maintainers who publish `countdown.sha256` next to the script | A signed package or a required `CHECKSUM=` pin |
+
+**Includes:** automatic `${SCRIPT_URL}.sha256`; human link / value / result.  
+**Excludes:** listing `CHECKSUM` in `help` / `about`; treating same-channel SHA-256 as a signature.
+
+| Surface | What you open | What for |
+|---------|---------------|----------|
+| `countdown.sha256` | companion file | published digest |
+| `countdown install` / `self-update` | commands | automatic verify |
+
+| You do… | What it means | What you type |
+|---------|---------------|---------------|
+| Install without a pin | The program fetches the sidecar. Match continues; mismatch aborts; missing sidecar warns and continues. | `curl -fsSL https://raw.githubusercontent.com/Wilgat/countdown/main/countdown \| sh` |
+
 ---
 
 ## 2. Core Rules / Requirements (Mandatory)
@@ -154,6 +174,20 @@ When this requirement is **Active** for the product:
 - **CIAO Principle 3 – Anti-fragile:** Missing companion does not hard-break older channels; whitespace-tolerant digest parse.  
 - **CIAO Principle 5 / 14 – Output & traceability:** Link, value, and result are operator-visible audit trail via `out_*`.  
 - **CIAO Principle 4 / CIAO-Lite O · Principle 20 – Over-protect / Protect Against AI:** Do not remove automatic companion verify or silent-ize integrity outcomes.
+
+---
+
+## Under command line for normal user only
+
+When `countdown` runs on Termux, Git Bash, Windows cmd, or the same class (this login only):
+
+| MUST | MUST NOT |
+|------|----------|
+| Keep **normal user privilege** only | Enable **admin privilege** or **dedicated system user privilege** |
+| Verify the companion as this login | Recommend `sudo curl \| sh`; wrap `apt`/`dnf`; create a dedicated system user |
+| Git Bash / Windows cmd: same ceiling | Invoke Termux `pkg` because Git Bash or Windows cmd was detected |
+
+**This requirement:** install integrity. Companion fetch stays a normal-user download. Do not add a Type 1 verify path.
 
 ---
 

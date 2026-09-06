@@ -12,6 +12,27 @@ It defines a **Type 0–centric self-managed shell CLI** (install / update / uni
 **Scope:** User-facing command names, flags, dispatch, privilege labels, and mode contracts.  
 **Out of scope (own requirements when specialized):** Online-install checksum mechanics detail, self-management safety beyond the command surface, shell coding style, full output-function catalog (cited, not re-owned).
 
+### 1.1 Human-facing
+
+**In one sentence:** You type `countdown` plus a command (`start`, `help`, `about`, …) and the program routes that word; empty line with no command means install-or-recheck, not help.
+
+| You | The other role | Not this |
+|-----|----------------|----------|
+| A normal login who runs `countdown` | Maintainers who keep the command table honest | A dest approval machine |
+
+**Includes:** every routed verb, global flags, help listing.  
+**Excludes:** duration/remaining-time details (domain file); checksum algorithm (checksum file).
+
+| Surface | What you open | What for |
+|---------|---------------|----------|
+| `./countdown` | program file people install | dispatcher |
+| `countdown help` | command | listed verbs |
+
+| You do… | What it means | What you type |
+|---------|---------------|---------------|
+| See the command list | Help names countdown verbs and self-management verbs. | `countdown help` |
+| Start a named countdown | Domain verb is routed here; remaining-time law lives on the domain file. | `countdown start work 25m` |
+
 ---
 
 ## 2. Core Rules / Requirements (Mandatory)
@@ -83,7 +104,7 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 | **Primary executable** | Repo root `./countdown` (POSIX `/bin/sh`, single-file for `curl \| sh`) |
 | **Dispatcher** | `app_main` (always invoked at end of script: `app_main "$@"` — no `${0##*/}` / APP_NAME basename gate; required for `curl \| sh`) |
 | **Output SSOT** | `out_text` + wrappers (`out_info`, `out_success`, `out_warn`, `out_error`, `out_die`, `out_plain`, `out_json`, …) |
-| **Version SSOT** | `VERSION` in script config block (product SSOT; currently `VERSION="1.1.2"`) |
+| **Version SSOT** | `VERSION` in script config block (product SSOT; currently `VERSION="1.1.3"`) |
 | **Install paths** | Global: `GLOBAL_BIN` default `/usr/local/bin`; User: `USER_BIN` default `${HOME}/.local/bin` |
 | **Remote channel env (help surface)** | `REPO_USER` / `REPO_NAME` (defaults `Wilgat` / `countdown`); `SCRIPT_URL` composed default `https://raw.githubusercontent.com/${REPO_USER}/${REPO_NAME}/main/${APP_NAME}` (literal product default: `https://raw.githubusercontent.com/Wilgat/countdown/main/countdown`; override via env). **`help` / `about` MUST list these operator channel vars as designed — MUST NOT list `CHECKSUM`** (install-path runtime pin only; see `requirement-shell-automatic-checksum.md`) |
 | **Type 1 / Type 2 commands** | **None** on current surface — this tool is CLI lifecycle only |
@@ -96,11 +117,19 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 | *(no args — empty argv)* | Type 0 | `app_main` → `inst_maybe_install` / `inst_perform_install` | **Type O install-ensure** (not Type N help): not-installed / local / global; never help; see `requirement-shell-cli-zero-arguments.md` |
 | `install` | Type 0 | `inst_perform_install` | Install binary for current privilege (root→global, user→local); idempotent unless force reinstall |
 | `version` | Type 0 | `app_main` / `app_version` | Print local version; JSON object when `--json` |
-| `about` | Type 0 | `app_about` | Diagnostics: install presence, global/local paths, user, shell, TTY; JSON when `--json`; **no `CHECKSUM` field** |
+| `about` | Type 0 | `app_about` | Diagnostics: install presence, global/local paths, user, shell, TTY, **cache folder (preferred/fallback)** and **persistence folder**; JSON when `--json` includes `cache_preferred` / `cache_fallback` / `persistence_storage` / `effective_storage`; **no `CHECKSUM` field**. Folder law: `requirement-shell-cli-storage.md` |
 | `version-check` | Type 0 | `ver_check` | Compare local vs remote `VERSION` from `SCRIPT_URL`; fail clearly if URL unset/unreachable |
 | `self-update` | Type 0 | `inst_self_update` | Fetch remote version; reinstall when policy allows; reuse install primitives |
 | `self-uninstall` | Type 0 | `inst_self_uninstall` | Remove managed binary; PATH cleanup only if `~/.local/bin` empty (user installs) |
 | `help` | Type 0 | `app_help` | Full usage in human mode; short JSON note in JSON mode; Environment lists channel vars only — **not** `CHECKSUM` |
+| `start [--persist] [name] <duration>` | Type 0 | `countdown_start` | Start named countdown; duration required. Topic owner: `requirement-domain-countdown.md`. Sample: `countdown start work 25m` |
+| `stop [name]` | Type 0 | `countdown_stop` | Stop and report remaining time. Topic owner: `requirement-domain-countdown.md`. Sample: `countdown stop work` |
+| `status [name]` | Type 0 | `countdown_status` | Remaining time without stopping. Topic owner: `requirement-domain-countdown.md`. Sample: `countdown status work` |
+| `list [--persist]` | Type 0 | `countdown_list` | List running countdowns for the storage mode. Topic owner: `requirement-domain-countdown.md`. Sample: `countdown list` |
+| `kill [name]` | Type 0 | `countdown_kill_or_reset kill` | Discard without remaining report. Topic owner: `requirement-domain-countdown.md`. Sample: `countdown kill work` |
+| `reset [name]` | Type 0 | `countdown_kill_or_reset reset` | Discard / reset. Topic owner: `requirement-domain-countdown.md`. Sample: `countdown reset work` |
+
+Every routed verb above **MUST** also appear on its topic-owner requirement with a complete invocation sample (dual mention). Help text is **not** the second mention.
 
 #### Global flags (normative wiring for this project)
 
@@ -124,7 +153,7 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 - Type 1: `prerequisites`, `create-user`, Docker host install, etc.  
 - Type 2: app host `start`/`stop`/`configure` under a system user  
 
-**Domain product subcommands** (countdown start/stop/status/list/kill/reset, duration, persist): owned by the **current domain SSOT** — `docs/requirements/requirement-domain-countdown.md` (not duplicated as full catalog here). Dispatcher **must** still route them; help/about domain items follow that SSOT.
+**Domain product subcommands** (countdown start/stop/status/list/kill/reset, duration, persist): **named in the command table above** and owned in full by the **current domain SSOT** — `docs/requirements/requirement-domain-countdown.md`. Dispatcher **must** still route them; help/about domain items follow that SSOT.
 
 ### 2.7 Why This Requirement Exists (Direct CIAO Alignment)
 
@@ -137,6 +166,20 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 - **CIAO Principle 10 – Least-Privilege User** (https://github.com/cloudgen/ciao): Type 0 default for CLI self-care; no invented system-user requirement for binary lifecycle.  
 - **CIAO Principle 16 – Interactive vs non-interactive** (https://github.com/cloudgen/ciao): No hang in non-interactive; prompts only when appropriate.  
 - **CIAO Principle 4 / CIAO-Lite O · Principle 20 – Over-protect / Protect Against AI** (https://github.com/cloudgen/ciao): Protection Rule below blocks privilege and UX regressions.
+
+---
+
+## Under command line for normal user only
+
+When `countdown` runs on Termux, Git Bash, Windows cmd, or the same class (this login only):
+
+| MUST | MUST NOT |
+|------|----------|
+| Keep **normal user privilege** only | Enable **admin privilege** or **dedicated system user privilege** |
+| Route install and countdown verbs as this login | In-tool `sudo`; wrap `apt`/`dnf`; create a dedicated system user; recommend `sudo curl \| sh` |
+| Git Bash / Windows cmd: same ceiling | Invoke Termux `pkg` because Git Bash or Windows cmd was detected |
+
+**This requirement:** privilege labels, dispatch, and detect. Type 1 / Type 2 stay **unused** on this class. Help **MUST NOT** advertise `sudo curl | sh` as the path for Termux / Git Bash / Windows cmd.
 
 ---
 
@@ -193,6 +236,9 @@ This requirement is satisfied for the countdown shell CLI when all of the follow
 | `docs/requirements/requirement-shell-cli-zero-arguments.md` | Empty argv install-ensure (not installed / local / global) |
 | `docs/requirements/requirement-shell-idempotency.md` | Re-run safety for ensure ops |
 | `docs/requirements/requirement-shell-modular-function-design.md` | Prefix ownership (`app_`, `inst_`, `out_*`) |
+| `docs/requirements/requirement-shell-cli-storage.md` | Cache folder **and** persistence folder; `about` storage fields |
+| `docs/requirements/requirement-domain-countdown.md` | Domain verb topic-owner (dual mention) |
+| `docs/requirements/requirement-shell-script-coding.md` | POSIX coding specialize-in home |
 | `docs/requirements/index.md` | Registry SSOT |
 | `./countdown` | Implementation under test |
 
@@ -211,7 +257,7 @@ This requirement is satisfied for the countdown shell CLI when all of the follow
 | **TP-CLI-02** version human + JSON | `tests/test_cli.sh` | have |
 | **TP-CLI-03** help Type 0 + domain rows | `tests/test_cli.sh` | have |
 | **TP-CLI-04** help/about JSON purity | `tests/test_cli.sh` | have |
-| **TP-CLI-05** about shell storage fields | n/a — domain owns storage (**TP-COUNTDOWN-09**) | n/a |
+| **TP-CLI-05** about cache + persistence | `tests/test_cli.sh` | have |
 | **TP-CLI-06** unknown command | `tests/test_cli.sh` | have |
 | **TP-CLI-07** quiet / `-q` | `tests/test_cli.sh` | have |
 | **TP-CLI-08** / **TP-U-01** `env -u HOME` | `tests/test_cli.sh` | have |
@@ -222,6 +268,6 @@ This requirement is satisfied for the countdown shell CLI when all of the follow
 | **TP-COUNTDOWN-01** domain help verbs | `tests/test_countdown_domain.sh` | have |
 
 
-**Last Updated**: 2026-07-14
+**Last Updated**: 2026-08-30
 **Owner**: countdown project maintainers  
 **Alignment**: Registry `docs/requirements/index.md`; peer live requirements in §6; CIAO Principles 1, 2, 3, 4, 6, 9, 10, 16, 20 (v2.10.2) (https://github.com/cloudgen/ciao); CIAO-Lite (https://github.com/cloudgen/ciao-lite).

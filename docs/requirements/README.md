@@ -1,6 +1,6 @@
 # Requirements (countdown)
 
-**Current state (2026-07-24 — ID notation + mold alignment):** Live Active set registered in `index.md` with primary **Requirement-IDs (`RQ-*`)**. Includes **class** (`RQ-CLASS-SOFTWARE-DEV`), **eight** Type 0 / structure `requirement-shell-*` files, **domain SSOT** `requirement-domain-countdown` / **`RQ-DOMAIN-COUNTDOWN`**, and **bootstrap chain** (`RQ-BOOTSTRAP-CHAIN`).
+**Current state (2026-09-06 — human-facing + coding-style):** Live Active set registered in `index.md` with primary **Requirement-IDs (`RQ-*`)**. Includes **class** (`RQ-CLASS-SOFTWARE-DEV`), **ten** shell `requirement-shell-*` files (including **`RQ-SHELL-CLI-STORAGE`** and **`RQ-SHELL-SCRIPT-CODING`**), **domain SSOT** `requirement-domain-countdown` / **`RQ-DOMAIN-COUNTDOWN`**, and **bootstrap chain** (`RQ-BOOTSTRAP-CHAIN`).
 
 ## Layout
 

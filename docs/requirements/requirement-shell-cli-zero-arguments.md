@@ -5,7 +5,7 @@
 
 ## 1. Purpose
 
-This requirement is the **project Single Source of Truth** for **zero-argument (empty argv) dispatcher behavior** of the countdown POSIX `/bin/sh` Type 0 CLI.
+This requirement is the **project Single Source of Truth** for **zero-argument (empty argv) dispatcher behavior** of the countdown POSIX `/bin/sh` CLI you run as yourself.
 
 ### 1.0 Product type (template dual-model)
 
@@ -21,6 +21,26 @@ It defines what happens when the tool is invoked with **no command and no flags*
 ```sh
 curl -fsSL https://raw.githubusercontent.com/Wilgat/countdown/main/countdown | /bin/sh
 ```
+
+### 1.1 Human-facing
+
+**In one sentence:** Running `countdown` with no words means install or re-check install — it does **not** print help.
+
+| You | The other role | Not this |
+|-----|----------------|----------|
+| A normal login who pastes the curl one-liner or types `countdown` | Maintainers who keep empty-line install honest | A numbered main menu |
+
+**Includes:** not installed → install; already local/global → already-installed success.  
+**Excludes:** empty argv = help; empty argv = start a countdown.
+
+| Surface | What you open | What for |
+|---------|---------------|----------|
+| `./countdown` | program with no args | install-ensure |
+| curl one-liner | first install | same empty-argv path |
+
+| You do… | What it means | What you type |
+|---------|---------------|---------------|
+| First install from the channel | Empty argv installs. A second empty argv does not reinstall or show help. | `countdown` (no arguments) |
 
 Empty argv means **install-ensure** for three detect cases:
 
@@ -157,6 +177,20 @@ app_main:
 - **CIAO Principle 6 – Single Point of entry** (https://github.com/cloudgen/ciao): `app_main` owns empty-argv before help default.  
 - **CIAO Principle 16 – Interactive vs non-interactive** (https://github.com/cloudgen/ciao): Case A auto under pipe; optional TTY confirm.  
 - **CIAO Principle 4 / CIAO-Lite O · Principle 20 – Over-protect / Protect Against AI** (https://github.com/cloudgen/ciao): Protection Rule against help-fallback regression.
+
+---
+
+## Under command line for normal user only
+
+When `countdown` runs on Termux, Git Bash, Windows cmd, or the same class (this login only):
+
+| MUST | MUST NOT |
+|------|----------|
+| Keep **normal user privilege** only | Enable **admin privilege** or **dedicated system user privilege** |
+| Empty-line install-ensure as this login | Recommend `sudo curl \| sh`; wrap `apt`/`dnf`; create a dedicated system user |
+| Git Bash / Windows cmd: same ceiling | Invoke Termux `pkg` because Git Bash or Windows cmd was detected |
+
+**This requirement:** empty argv. Install-ensure stays a this-login path. Do not escalate empty argv on this class.
 
 ---
 

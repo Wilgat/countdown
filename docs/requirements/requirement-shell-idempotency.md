@@ -14,6 +14,26 @@ It defines re-run safety for ensure-style shell lifecycle commands (install, PAT
 
 **Informal formula:** for ensure-style operation *f* and system state *x*, **f(f(x)) ≈ f(x)** for the **desired outcome** (logs and timestamps may differ).
 
+### 1.1 Human-facing
+
+**In one sentence:** Running install or self-update again when the job is already done must succeed as “already done,” not break or reinstall blindly.
+
+| You | The other role | Not this |
+|-----|----------------|----------|
+| A normal login who re-runs `countdown install` | Maintainers who keep re-run paths safe | Domain `start` of an already-running countdown (that is a fail-closed domain rule) |
+
+**Includes:** install already present; self-update already latest; uninstall when missing.  
+**Excludes:** `--force` reinstall (that is the override).
+
+| Surface | What you open | What for |
+|---------|---------------|----------|
+| `countdown install` | command | second run is a no-op |
+| `countdown self-update` | command | already-latest success |
+
+| You do… | What it means | What you type |
+|---------|---------------|---------------|
+| Install twice | The second run reports already installed and leaves the binary in place. | `countdown install` then `countdown install` |
+
 ---
 
 ## 2. Core Rules / Requirements (Mandatory)
@@ -112,6 +132,20 @@ Force **MUST NOT** be used as a silent way to skip integrity verification.
 - **CIAO Principle 11 – Safe temporary file handling** (https://github.com/cloudgen/ciao): Temps cleaned so re-entry does not pile up or race on fixed names.  
 - **CIAO Principle 12 – Backup & restore** (https://github.com/cloudgen/ciao): When future ensure steps edit existing configs, backup-before-write remains required (PATH edits today use append/check patterns).  
 - **CIAO Principle 4 / CIAO-Lite O · Principle 20 – Over-protect / Protect Against AI** (https://github.com/cloudgen/ciao): Existence checks and no-op success paths are Protection Zone material — not “simplify away.”
+
+---
+
+## Under command line for normal user only
+
+When `countdown` runs on Termux, Git Bash, Windows cmd, or the same class (this login only):
+
+| MUST | MUST NOT |
+|------|----------|
+| Keep **normal user privilege** only | Enable **admin privilege** or **dedicated system user privilege** |
+| Re-run install/update as this login | In-tool `sudo` on re-run; wrap `apt`/`dnf`; recommend `sudo curl \| sh` |
+| Git Bash / Windows cmd: same ceiling | Invoke Termux `pkg` because Git Bash or Windows cmd was detected |
+
+**This requirement:** re-run safety for ensure ops. Idempotent install does not gain Type 1 on this class.
 
 ---
 

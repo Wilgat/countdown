@@ -10,7 +10,27 @@ This requirement is the **project Single Source of Truth** for the **bootstrap c
 **Scope:** Declared hops; root / immediate / leaf roles; direction A→B only; per-edge inherit / retarget / domain; ship unit and channel separation; shared vs domain-only defect routing.  
 **Out of scope (cited, not re-owned):** Shell modular prefixes (`requirement-shell-modular-function-design.md`); output SSOT (`requirement-shell-output-requirements.md`); self-management command behavior (`requirement-shell-self-management.md`); automatic checksum algorithm (`requirement-shell-automatic-checksum.md`); CLI dispatch catalog (`requirement-shell-cli-interface.md`); empty-argv Type O (`requirement-shell-cli-zero-arguments.md`).
 
-**Core idea:** Countdown is not a greenfield Type 0 invention — it is a **leaf** on an explicit specialization chain. Agents **MUST** name hops, **MUST NOT** reverse-copy this leaf onto ancestors, and **MUST** fix shared architecture defects at the responsible hop when authorized.
+**Core idea:** Countdown is not a greenfield invention — it is a **leaf** on an explicit specialization chain. Agents **MUST** name hops, **MUST NOT** reverse-copy this leaf onto ancestors, and **MUST** fix shared architecture defects at the responsible hop when authorized.
+
+### 1.1 Human-facing
+
+**In one sentence:** Countdown grew from an older install-yourself CLI; you must not copy countdown’s body back onto those parents.
+
+| You | The other role | Not this |
+|-----|----------------|----------|
+| A maintainer changing install or remaining-time code | Parent products (`timer`, `selfmanaged`) that own shared install architecture | Treating countdown as the parent of those tools |
+
+**Includes:** hop table, A→B direction, who owns a shared bug vs a countdown-only bug.  
+**Excludes:** duration grammar; help text for `start`.
+
+| Surface | What you open | What for |
+|---------|---------------|----------|
+| `./countdown` | leaf program | specialized product |
+| this file | hop table | who is parent vs leaf |
+
+| You do… | What it means | What you type |
+|---------|---------------|---------------|
+| Fix a shared install bug | Fix it on the parent hop, then re-specialize countdown. Do not overwrite the parent with countdown. | keep `./countdown` as the leaf |
 
 ---
 

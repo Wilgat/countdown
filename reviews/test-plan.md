@@ -30,7 +30,7 @@ Runner: `./tests/run.sh`
 | **TP-CLI-02** | version human + JSON | **have** | `test_cli.sh` |
 | **TP-CLI-03** | help Type 0 + domain rows; no CHECKSUM | **have** | `test_cli.sh` |
 | **TP-CLI-04** | help/about JSON purity | **have** | `test_cli.sh` |
-| **TP-CLI-05** | shell storage about fields | **n/a** | domain owns storage (**TP-STORAGE-***) |
+| **TP-CLI-05** | about cache folder + persistence folder | **have** | `test_cli.sh`; `RQ-SHELL-CLI-STORAGE` |
 | **TP-CLI-06** | unknown command + JSON error | **have** | `test_cli.sh` |
 | **TP-CLI-07** | quiet / `-q` | **have** | `test_cli.sh` |
 | **TP-CLI-08** | `env -u HOME` under set -u | **have** | with **TP-U-01** |

@@ -12,7 +12,27 @@ It implements **CIAO Principle 5 — Single Source of Output** (cloudgen/ciao **
 **Scope:** Central `out_*` system, mode contracts, channel rules, JSON purity, quiet filtering, TTY colors, fatal error emission, pipeline-SSOT remarks.  
 **Out of scope (cited, not re-owned):** Command catalog (`requirement-shell-cli-interface.md`); self-management semantics; modular prefix table (except that output owns `out_*`); interactive prompt logic beyond prompt output hooks.
 
-### 1.1 SSOT family (do not confuse)
+### 1.1 Human-facing
+
+**In one sentence:** Every message you see from `countdown` goes through one output door (`out_*`): human lines, JSON, quiet, and errors.
+
+| You | The other role | Not this |
+|-----|----------------|----------|
+| A person or script reading stdout/stderr | Maintainers who keep `out_*` as the only UI printer | Internal `$(…)` path returns (those are data, not product UI) |
+
+**Includes:** `out_info` / `out_error` / `out_json` / `--quiet` / `--json`.  
+**Excludes:** command routing; remaining-time math.
+
+| Surface | What you open | What for |
+|---------|---------------|----------|
+| `countdown --json version` | command | JSON on stdout |
+| `countdown --json start dup 1s` | command | error JSON on stderr |
+
+| You do… | What it means | What you type |
+|---------|---------------|---------------|
+| Script against JSON | Success JSON stays on stdout; errors go to stderr. | `countdown --json status work` |
+
+### 1.2 SSOT family (do not confuse)
 
 | Concept | Role in this product |
 |---------|----------------------|
@@ -43,7 +63,7 @@ It implements **CIAO Principle 5 — Single Source of Output** (cloudgen/ciao **
 | Exception class | Rule | Live examples in `./countdown` |
 |-----------------|------|-----------------------------------|
 | **A. Inside output SSOT** | Only `out_text`, `out_json`, and `out_json_error` may `printf` to fd 1/2 for **product** human or JSON lines. Nested `printf … \| sed` used only to escape strings for those emitters is part of the same SSOT. | `out_text` level cases; `out_json` / `out_json_error` body builders |
-| **B. Function return-via-stdout** | A helper may `printf '%s' "$value"` **solely** so callers capture it with `$(…)`. Prefer `printf` over `echo`. Callers must capture; bare top-level invocation must not be used as the user-facing message path. | `inst_self_uninstall_determine_bin`, `util_get_install_bin_path`, `inst_get_version`, `util_resolve_storage`, `util_get_current_shell`, `prompt_ask` (answer/default return only; prompt text still via `out_*`) |
+| **B. Function return-via-stdout** | A helper may `printf '%s' "$value"` **solely** so callers capture it with `$(…)`. Prefer `printf` over `echo`. Callers must capture; bare top-level invocation must not be used as the user-facing message path. | `inst_self_uninstall_determine_bin`, `util_get_install_bin_path`, `inst_get_version`, `util_preferred_cache_dir`, `util_fallback_cache_dir`, `util_persistent_storage_dir`, `util_resolve_persistent_storage`, `util_resolve_storage`, `util_get_current_shell`, `prompt_ask` (answer/default return only; prompt text still via `out_*`) |
 | **C. File I/O (redirected)** | `printf … >> "$file"` that appends config/content to a path is file mutation, not product stdout/stderr messaging. User-visible “what changed” lines still go through `out_*`. | `path_add_bashrc`, `path_add_zshrc`, `path_add_fish` |
 | **D. Tool protocol / computation pipes** | `printf` feeding another program (checksum verify, filters) with product status still reported via `out_*`. | `inst_perform_install_download_with_checksum` → `printf … \| sha256sum -c` |
 | **E. Command-sub fallbacks** | Prefer `${var:-default}` where possible; `cmd \|\| printf '%s' "unknown"` (or `echo`) assigned into a variable for logic only. | `USERNAME="$(id -un … \|\| echo "unknown")"`, remote version empty fallbacks, boolean strings built for `out_json` fields |
@@ -201,6 +221,20 @@ Align with SSOT-of-stdout and SSOT-of-stderr terms:
 - **CIAO Principle 5 – Single source of output** (https://github.com/cloudgen/ciao): One `out_text` / `out_json` authority.  
 - **CIAO Principle 14 – Security & traceability** (https://github.com/cloudgen/ciao): Separate user-facing payload from diagnostics; support ERROR/WARN/INFO/DEBUG discipline.  
 - **CIAO Principle 4 / CIAO-Lite O · Principle 20 – Over-protect / Protect Against AI** (https://github.com/cloudgen/ciao): JSON-forces-quiet and no-raw-print rules are sacred.
+
+---
+
+## Under command line for normal user only
+
+When `countdown` runs on Termux, Git Bash, Windows cmd, or the same class (this login only):
+
+| MUST | MUST NOT |
+|------|----------|
+| Keep **normal user privilege** only | Enable **admin privilege** or **dedicated system user privilege** |
+| Print via `out_*` as this login | Recommend `sudo curl \| sh` from output helpers |
+| Git Bash / Windows cmd: same ceiling | Invoke Termux `pkg` because Git Bash or Windows cmd was detected |
+
+**This requirement:** output-only. Privilege ceiling is owned by `requirement-shell-cli-interface`. Do not add sudo wrappers here.
 
 ---
 

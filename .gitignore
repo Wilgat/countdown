@@ -33,6 +33,8 @@ ehthumbs.db
 *.code-workspace
 
 # --- universal: temp / scratch / logs ---
+.h1-backup-*/
+.h2-backup-*/
 tmp/
 temp/
 temps/

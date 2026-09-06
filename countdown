@@ -44,9 +44,9 @@ set -u  # Treat unset variables as error (defensive)
 : "${APP_DESC:=Lightweight per-user named countdown timers (volatile or persistent)}"
 : "${SHORT_DESCRIPTION:=${APP_DESC}}"
 : "${DESCRIPTION:=POSIX /bin/sh CLI you run as yourself: install, version-check, self-update, self-uninstall, about, plus countdown start/stop/status/list with duration.}"
-# Product version SSOT (specialized 1.1.3: cache folder AND persistence folder). Extractors use: grep '^VERSION="'
-VERSION="1.1.3"
-: "${VERSION:=1.1.3}"
+# Product version SSOT (specialized 1.1.4: coverage honesty + README install verb). Extractors use: grep '^VERSION="'
+VERSION="1.1.4"
+: "${VERSION:=1.1.4}"
 
 # Runtime flags (safe defaults)
 : "${QUIET:=0}"
@@ -2748,7 +2748,7 @@ app_about() {
     : "${QUIET:=0}"
     : "${APP_NAME:=countdown}"
     # Version comes from global SSOT (VERSION="1.0.0" near top); default only if unset
-    : "${VERSION:=1.1.3}"
+    : "${VERSION:=1.1.4}"
     : "${GLOBAL_BIN:=/usr/local/bin}"
     : "${USER_BIN:=${HOME}/.local/bin}"
     : "${SCRIPT_URL:=}"
@@ -2890,7 +2890,7 @@ app_about() {
 
 app_version() {
     : "${APP_NAME:=countdown}"
-    : "${VERSION:=1.1.3}"
+    : "${VERSION:=1.1.4}"
     : "${JSON:=0}"
     if [ "${JSON}" -eq 1 ]; then
         # Same machine contract as historical app_main inline path

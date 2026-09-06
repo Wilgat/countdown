@@ -7,7 +7,7 @@
 
 This requirement is the **Single Source of Truth (SSOT)** for the product’s **domain law** on the specialized shell CLI: specialized subcommands, specialized features, specialized help items, and specialized about items—beyond Type 0 install/self-management.
 
-**SSOT rule:** For a specialized product that has a domain surface, **exactly one** Active domain-requirements file is the **current** domain SSOT (this file, for this project). Additional domain files **MUST NOT** be invented in parallel without superseding this one and updating `docs/requirements/index.md`. **Exception:** [genesis template](../terminologies/genesis-template.md) state — no specialized domain law is required (registry may be empty).
+**SSOT rule:** For a specialized product that has a domain surface, **exactly one** Active domain-requirements file is the **current** domain SSOT (this file, for this project). Additional domain files **MUST NOT** be invented in parallel without superseding this one and updating `docs/requirements/index.md`. **Exception:** genesis-template state — no specialized domain law is required (registry may be empty).
 
 **Scope:** Domain CLI verbs, duration/remaining-time semantics, names, storage modes, domain JSON/human contracts, domain rows in `help` / `about`.  
 **Out of scope (peer shell law):** Install, version-check, self-update, self-uninstall, empty-argv Type O, automatic checksum, output SSOT mechanics (`out_*` still used), modular prefix table ownership, Type 0 **cache folder** resolve (`requirement-shell-cli-storage`).

@@ -33,6 +33,8 @@ run_test_countdown_domain() {
     assert_contains "TP-COUNTDOWN-01 help lists kill" "$_out" "kill"
     assert_contains "TP-COUNTDOWN-01 help lists reset" "$_out" "reset"
     assert_contains "TP-COUNTDOWN-01 help lists --persist" "$_out" "--persist"
+    assert_contains "TP-COUNTDOWN-01 help lists Duration formats" "$_out" "Duration formats"
+    assert_contains "TP-COUNTDOWN-01 help lists 25m example" "$_out" "25m"
 
     # --- TP-COUNTDOWN-02: start / status / list / stop (human, volatile; duration required) ---
     _out=$(_run start ci-smoke 30s 2>/dev/null)
@@ -148,6 +150,14 @@ else:
     _out=$(_run kill kill-me 2>/dev/null)
     _ec=$?
     assert_eq "TP-COUNTDOWN-06 kill exit 0" 0 "$_ec"
+    case "$_out" in
+        *remaining*) t_fail "TP-COUNTDOWN-06 kill must not report remaining" ;;
+        *) t_pass "TP-COUNTDOWN-06 kill has no remaining report" ;;
+    esac
+    _err=$(_run --json status kill-me 2>&1 >/dev/null)
+    _ec=$?
+    assert_eq "TP-COUNTDOWN-06 kill then status exit 1" 1 "$_ec"
+    assert_contains "TP-COUNTDOWN-06 kill then no_countdown" "$_err" "no_countdown"
 
     _run start reset-me 40s >/dev/null 2>&1
     _out=$(_run reset reset-me 2>/dev/null)
@@ -164,6 +174,15 @@ else:
     _ec=$?
     assert_eq "TP-COUNTDOWN-07 invalid name json exit 1" 1 "$_ec"
     assert_contains "TP-COUNTDOWN-07 invalid_name code" "$_err" "invalid_name"
+
+    _out=$(_run start 25m 2>/dev/null)
+    _ec=$?
+    assert_eq "TP-COUNTDOWN-02 start 25m exit 0" 0 "$_ec"
+    _run stop default >/dev/null 2>&1 || true
+
+    _err=$(_run list extra-name 2>&1 >/dev/null)
+    _ec=$?
+    assert_eq "TP-COUNTDOWN-02 list extra name exit 1" 1 "$_ec"
 
     # --- TP-STORAGE-02: --persist start / list / stop ---
     _out=$(_run start --persist persist-t 45s 2>/dev/null)
@@ -214,12 +233,7 @@ else:
     if [ "$_hit" -eq 1 ]; then
         t_pass "TP-STORAGE-01 volatile private dir file present"
     else
-        _out=$(_run status stor-path 2>/dev/null)
-        if [ $? -eq 0 ]; then
-            t_pass "TP-STORAGE-01 storage resolved (status OK; path layout may differ)"
-        else
-            t_fail "TP-STORAGE-01 no storage file and status failed"
-        fi
+        t_fail "TP-STORAGE-01 expected private-dir file under /dev/shm|tmp/${APP_NAME}-<user>/"
     fi
     _run stop stor-path >/dev/null 2>&1 || true
 
@@ -234,18 +248,32 @@ else:
             break
         fi
     done
-    if [ -n "$_state" ]; then
+    if [ -z "$_state" ]; then
+        t_fail "TP-STORAGE-03 could not locate state file to corrupt"
+    else
         printf 'not-a-number\nbad\n' > "$_state"
         _err=$(_run --json status corrupt-me 2>&1 >/dev/null)
         _ec=$?
-        if [ "$_ec" -ne 0 ]; then
-            t_pass "TP-STORAGE-03 corrupted state status non-zero"
-            assert_contains "TP-STORAGE-03 corrupted_data or error type" "$_err" "corrupted"
+        assert_eq "TP-STORAGE-03 corrupted state status non-zero" 1 "$_ec"
+        assert_contains "TP-STORAGE-03 corrupted_data code" "$_err" "corrupted_data"
+        _run start corrupt-stop 60s >/dev/null 2>&1
+        _stop_state=
+        for _base in /dev/shm /tmp; do
+            _candidate="${_base}/${APP_NAME}-${_u}/${APP_NAME}_${_u}_corrupt-stop"
+            if [ -f "$_candidate" ]; then
+                _stop_state="$_candidate"
+                break
+            fi
+        done
+        if [ -z "$_stop_state" ]; then
+            t_fail "TP-STORAGE-03 could not locate stop state file to corrupt"
         else
-            t_fail "TP-STORAGE-03 corrupted state expected non-zero status"
+            printf 'not-a-number\nbad\n' > "$_stop_state"
+            _err=$(_run --json stop corrupt-stop 2>&1 >/dev/null)
+            _ec=$?
+            assert_eq "TP-STORAGE-03 corrupted stop non-zero" 1 "$_ec"
+            assert_contains "TP-STORAGE-03 stop corrupted_data code" "$_err" "corrupted_data"
         fi
-    else
-        t_skip "TP-STORAGE-03 could not locate state file to corrupt"
     fi
     _run kill corrupt-me >/dev/null 2>&1 || true
     _run stop corrupt-me >/dev/null 2>&1 || true

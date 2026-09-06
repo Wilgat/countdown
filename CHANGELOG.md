@@ -10,6 +10,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [1.1.4] - 2026-09-06
+
+### Changed
+- README Usage lists `countdown install`; elevated one-liner is `sudo curl … | sudo sh` (help parity)
+- CLI interface global flags name `--persist` (domain-owned; dual mention)
+
+### Fixed
+- **TP-STORAGE-01** fails when the private-dir file is missing (no soft-pass)
+- **TP-STORAGE-03** fails closed; asserts `corrupted_data` on status **and** stop
+- Domain suite covers `25m` duration, `list` extra-name reject, kill-without-remaining, Duration formats in help
+
+---
+
 ## [1.1.3] - 2026-09-06
 
 ### Changed

@@ -220,9 +220,9 @@ A change that touches parentage, ship-unit bootstrap claims, or shared Type 0 su
 
 | Gate / TP | Suite or method | Status |
 |-----------|-----------------|--------|
-| Lineage docs honest (timer → countdown) | static review + `reviews/` | have |
-| No reverse-copy of ship unit | process / reviews | have |
-| Suite green after specialize hops | `./tests/run.sh` | have |
+| **TP-BOOT-01** lineage docs honest (timer → countdown) | static review + `reviews/` | have |
+| **TP-BOOT-02** no reverse-copy of ship unit | process / reviews | have |
+| **TP-CLASS-01** / suite green after specialize hops | `./tests/run.sh` | have |
 
 
 **Last Updated**: 2026-07-15  

@@ -1,6 +1,6 @@
 # countdown - Lightweight per-user named countdown timers
 
-![Version](https://img.shields.io/badge/Version-1.1.5-blue?style=flat-square)
+![Version](https://img.shields.io/badge/Version-1.1.6-blue?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 [![CIAO](https://img.shields.io/badge/Philosophy-CIAO%20(Caution%20%E2%80%A2%20Intentional%20%E2%80%A2%20Anti--fragile%20%E2%80%A2%20Over--protect)-purple.svg)](https://github.com/cloudgen/ciao)
 [![Shell](https://img.shields.io/badge/Shell-POSIX%20sh-orange?style=flat-square)]()
@@ -34,10 +34,10 @@ Author: **Wilgat Wong** &lt;wilgat.wong@gmail.com&gt;
 - **Duration start** — `countdown start work 25m` (required duration)
 - **Remaining-time status/stop** — not count-up elapsed timers
 - **Two storage folders**:
-  - **Cache folder** (scratch): preferred `/dev/shm/cache/cache-countdown`
-  - **Persistence folder** (`--persist`): durable `~/.local/countdown/`
+  - **Cache folder** (scratch): private preferred `/dev/shm/cache/cache-countdown-<you>` (mode 700)
+  - **Persistence folder** (`--persist`): durable `~/.local/countdown/` (mode 700)
 - **Volatile vs persistent countdowns** — default is a private per-user ram/tmp dir; `--persist` uses the persistence folder
-- `countdown about` names **cache folder** and **persistence folder**
+- `countdown about` names the **cache folder** (preferred, fallback, and the one in use) and the **persistence folder**
 - Smart fallbacks for `/dev/shm`, missing `$HOME`, restricted containers, and Git Bash
 - **Cryptographic download verification** (automatic `.sha256` sidecar; optional `CHECKSUM=` pin)
 - One-liner install via `curl | sh`
@@ -226,6 +226,6 @@ MIT License — see the [LICENSE](LICENSE) file for details.
 
 ## Last Update
 
-2026-09-06 — 1.1.5: help names empty-argv install-ensure, privilege in people words, JSON `--json` domain verbs; about useful-commands include kill/reset/install.
+2026-09-23 — 1.1.6: cache scratch is a private per-login folder (mode 700); `about` names the cache folder in use; value prompts keep the answer in the current shell.
 
 **Made with care and a healthy dose of paranoia.** ⏱️

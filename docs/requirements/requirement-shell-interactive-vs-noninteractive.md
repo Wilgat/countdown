@@ -222,7 +222,7 @@ prompt_ask() {
 }
 ```
 
-This product’s `prompt_ask` is defined for future value prompts; live call sites today use `prompt_yes_no` only.
+The ship unit `prompt_ask` matches this sample (`PROMPT_ASK_VALUE`, no stdout return). Live call sites today use `prompt_yes_no` only.
 
 #### `inst_maybe_install` contract (this project)
 

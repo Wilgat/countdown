@@ -1,6 +1,6 @@
 **file**: docs/requirements/requirement-shell-cli-storage.md  
 **Requirement-ID**: `RQ-SHELL-CLI-STORAGE`  
-**Status**: Active (Version 1.0.0 – cache folder **and** persistence folder)  
+**Status**: Active (Version 1.1.0 – private cache leaf **and** persistence folder)  
 **Area**: shell  
 **Key**: `requirement-shell-cli-storage`  
 **Philosophy**: CIAO **v2.10.2** / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
@@ -11,7 +11,7 @@ This requirement is the **Single Source of Truth** for Type 0 shell CLI **storag
 
 | Class | Role | Product path |
 |-------|------|--------------|
-| **Cache folder** | Volatile scratch / temps / staging | Preferred `/dev/shm/cache/cache-countdown`; fallback `${XDG_CACHE_HOME}/cache-countdown` |
+| **Cache folder** | Volatile scratch / temps / staging | Preferred `/dev/shm/cache/cache-countdown-<user>` mode `700`; fallback `${XDG_CACHE_HOME}/cache-countdown` mode `700` |
 | **Persistence folder** | Durable per-user app data | `${HOME}/.local/countdown` |
 
 It owns path **shapes**, central resolvers, `app_main` wire, and `about` diagnostics for both classes.
@@ -27,7 +27,7 @@ It owns path **shapes**, central resolvers, `app_main` wire, and `about` diagnos
 |-----|----------------|----------|
 | A normal login who installs and runs `countdown` | Maintainers who keep both folder classes honest | A dest approval machine or inbound request queue |
 
-**Includes:** preferred cache under `/dev/shm/cache/`, fallback cache under XDG, persistence under `${HOME}/.local/countdown`.  
+**Includes:** a private preferred cache leaf under `/dev/shm/cache/`, fallback cache under XDG, persistence under `${HOME}/.local/countdown`.  
 **Excludes:** treating `${HOME}/.local/bin` as persistence; storing `--persist` countdown state in the cache folder; inventing a second scratch dump beside the resolver.
 
 | Surface | What you open | What for |
@@ -55,23 +55,23 @@ It owns path **shapes**, central resolvers, `app_main` wire, and `about` diagnos
 
 ### 2.2 Cache folder (portable shape; product values in §2.6)
 
-Portable family (first match that exists **and** is writable):
+Portable family (first leaf this login can **claim** as mode `700`):
 
 ```text
-1. RAM cache (preferred)   /dev/shm/cache/cache-<APP_NAME>
-2. System temp cache       /tmp/cache/cache-<APP_NAME>
-3. User cache fallback     ${XDG_CACHE_HOME}/cache-<APP_NAME>
+1. RAM cache (preferred)   /dev/shm/cache/cache-<APP_NAME>-<USERNAME>   mode 700
+2. System temp cache       /tmp/cache/cache-<APP_NAME>-<USERNAME>       mode 700
+3. User cache fallback     ${XDG_CACHE_HOME}/cache-<APP_NAME>           mode 700
 else fail loud via output SSOT — do not invent world-writable shared dumps
 ```
 
-**MUST NOT** use `/dev/shm/<APP_NAME>` or `/dev/shm/<APP_NAME>-<USERNAME>` as the **cache** folder — those look like ram-drive project folders (domain volatile may use a private per-user dir; that is **not** the Type 0 cache folder).
+**MUST NOT** use `/dev/shm/<APP_NAME>` or `/dev/shm/<APP_NAME>-<USERNAME>` as the **cache** folder — those are ram-drive project folders (domain volatile may use a private per-user dir; that is **not** the Type 0 cache folder).
 
-Create `/dev/shm/cache` (prefer mode **1777**) so other logins can add sibling `cache-<app>` leaves. If the preferred leaf exists but is **not writable**, fall through.
+Create the parent `/dev/shm/cache` or `/tmp/cache` (prefer mode **1777**) so other logins can add their own private leaves. The **leaf** is per login. Claim it only when all of these hold: it is a directory, it is not a symlink, `chmod 700` succeeds (this uid owns it), and a listing shows mode `drwx------`. A leaf that is merely writable, including one planted by another login, **MUST** be rejected and the resolver **MUST** fall through.
 
 ### 2.3 Persistence folder (normative)
 
 1. Persistence **MUST** be **`${HOME}/.local/<APP_NAME>`**.  
-2. Helper **`util_persistent_storage_dir`** **MUST** print that path. **`util_resolve_persistent_storage`** **MUST** `mkdir -p` it, confirm it is writable, then print it (fail closed).  
+2. Helper **`util_persistent_storage_dir`** **MUST** print that path. **`util_resolve_persistent_storage`** **MUST** create the parent, claim the leaf as mode `700` (not a symlink; `chmod 700` must succeed), then print it (fail closed).  
 3. **MUST NOT** use `${HOME}/.local/bin` as persistence (that is `USER_BIN`).  
 4. **MUST NOT** use a Type 1 `/var/…` deposit as Type 0 persistence.  
 5. **MUST NOT** use `${HOME}/.local/share/<APP_NAME>` as this product’s persistence shape.  
@@ -82,10 +82,10 @@ Create `/dev/shm/cache` (prefer mode **1777**) so other logins can add sibling `
 
 1. For the **chosen** cache tier, the resolver **MUST** `mkdir -p` the isolated root and only then print the path. Soft-return of a missing path is forbidden.  
 2. Failure to obtain a usable cache or persistence root **MUST** fail closed via `out_die`.  
-3. Isolation: app identity in the leaf name; ownership-aware create; never rewrite to a single shared world-writable dump.  
+3. Isolation: app identity **and** this login in the shm/tmp leaf name; mode `700`; never a shared writable dump. The XDG fallback is already per login via the home directory and **MUST** still be mode `700`.  
 4. `app_main` **MUST** wire early: `EFFECTIVE_STORAGE_DIR=$(util_resolve_storage)`; `PERSISTENT_STORAGE_DIR=$(util_resolve_persistent_storage)`; export both plus `STORAGE_DIR`; **`TMPDIR=${EFFECTIVE_STORAGE_DIR}`** so `mktemp -t` inherits **cache** isolation.  
 5. `about` JSON **MUST** include `cache_preferred`, `cache_fallback`, `persistence_storage`, and live chosen cache root `effective_storage` (or documented equivalents); **MUST NOT** include `CHECKSUM`.  
-6. `about` human **MUST** print **Cache folder (preferred)**, **Cache folder (fallback)**, and **Persistence storage**. **MUST NOT** label cache lines Storage (effective)/(fallback).
+6. `about` human **MUST** print **Cache folder (preferred)**, **Cache folder (fallback)**, **Cache folder (chosen)**, and **Persistence storage**. Chosen is the live root (`effective_storage`). **MUST NOT** label cache lines Storage (effective)/(fallback).
 
 ### 2.5 Domain coupling (this product — explicit)
 
@@ -105,12 +105,12 @@ Domain verbs, duration, and `--persist` flag catalog stay on `requirement-domain
 | **Product / APP_NAME** | `countdown` |
 | **Ship unit** | `./countdown` |
 | **Cache resolver name** | `util_resolve_storage` (plus `util_preferred_cache_dir` / `util_fallback_cache_dir`) |
-| **Priority chain (live)** | `/dev/shm/cache/cache-countdown` → `/tmp/cache/cache-countdown` → `${XDG_CACHE_HOME}/cache-countdown` |
-| **Preferred cache** | `/dev/shm/cache/cache-countdown` |
+| **Priority chain (live)** | `/dev/shm/cache/cache-countdown-<user>` mode `700` → `/tmp/cache/cache-countdown-<user>` mode `700` → `${XDG_CACHE_HOME}/cache-countdown` mode `700` |
+| **Preferred cache** | `/dev/shm/cache/cache-countdown-<user>` |
 | **Fallback cache** | `${XDG_CACHE_HOME:-${HOME}/.cache}/cache-countdown` |
 | **Persistence path** | `${HOME}/.local/countdown` |
 | **Persistence helpers** | `util_persistent_storage_dir` (print); `util_resolve_persistent_storage` (create-before-return) |
-| **Isolation keys** | `APP_NAME` in every leaf; sticky `…/cache/` parent on shm/tmp; **MUST NOT** `${APP_NAME}-${USERNAME}` as Type 0 cache |
+| **Isolation keys** | shm/tmp leaf is `cache-${APP_NAME}-${USERNAME}` mode `700` under sticky `…/cache/`; XDG leaf mode `700`; **MUST NOT** use `/dev/shm/${APP_NAME}` or `/dev/shm/${APP_NAME}-${USERNAME}` as this cache |
 | **Fallback `STORAGE_DIR` / Config** | `${XDG_CACHE_HOME}/cache-countdown` when shm and `/tmp/cache` fail |
 | **Call sites** | `app_main` (early wire + `TMPDIR`); `app_about` (diagnostics); domain `--persist` uses persistence folder via `countdown_resolve_base_dir` |
 | **Output SSOT on failure** | `out_die` |
@@ -171,7 +171,9 @@ When `countdown` runs on Termux, Git Bash, Windows cmd, or the same class (this 
 7. Echo a tier path without creating it (or without fail-closed create).  
 8. Scatter ad-hoc `/tmp/countdown` dumps outside the central resolver.  
 9. Remove per-user / per-app isolation “for simplicity.”  
-10. Duplicate full domain verb tables here (those stay on `requirement-domain-countdown`).
+10. Duplicate full domain verb tables here (those stay on `requirement-domain-countdown`).  
+11. Accept a cache or persistence leaf that is a symlink, group-writable, or owned by another login.  
+12. Omit **Cache folder (chosen)** from human `about`.
 
 **Violating this rule is a critical storage/isolation regression.**
 
@@ -179,7 +181,7 @@ When `countdown` runs on Termux, Git Bash, Windows cmd, or the same class (this 
 
 ## 5. Definition of done (storage)
 
-1. `about` human lists Cache folder (preferred), Cache folder (fallback), and Persistence storage.  
+1. `about` human lists Cache folder (preferred), Cache folder (fallback), Cache folder (chosen), and Persistence storage.  
 2. `about --json` includes `cache_preferred`, `cache_fallback`, `persistence_storage`, `effective_storage`; no `CHECKSUM`.  
 3. Persistence path is `${HOME}/.local/countdown`, not cache and not `bin`.  
 4. Domain `--persist` uses the persistence folder.  
@@ -215,6 +217,6 @@ When `countdown` runs on Termux, Git Bash, Windows cmd, or the same class (this 
 | **TP-CLI-04** about JSON purity (peer) | `tests/test_cli.sh` | have |
 | **TP-STORAGE-02** domain `--persist` uses persistence folder | `tests/test_countdown_domain.sh` | have |
 
-**Last Updated**: 2026-08-30  
+**Last Updated**: 2026-09-23  
 **Owner**: countdown project maintainers  
 **Alignment**: Registry `docs/requirements/index.md`; peer live requirements in §6; CIAO (https://github.com/cloudgen/ciao); CIAO-Lite (https://github.com/cloudgen/ciao-lite).

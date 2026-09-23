@@ -44,9 +44,9 @@ set -u  # Treat unset variables as error (defensive)
 : "${APP_DESC:=Lightweight per-user named countdown timers (volatile or persistent)}"
 : "${SHORT_DESCRIPTION:=${APP_DESC}}"
 : "${DESCRIPTION:=POSIX /bin/sh CLI you run as yourself. Start named remaining-time countdowns (start/stop/status/list/kill/reset). Also install, about, version-check, self-update, self-uninstall. No command means install or re-check install.}"
-# Product version SSOT (specialized 1.1.5: help operator copy). Extractors use: grep '^VERSION="'
-VERSION="1.1.5"
-: "${VERSION:=1.1.5}"
+# Product version SSOT (specialized 1.1.6: private cache leaf + prompt_ask cup). Extractors use: grep '^VERSION="'
+VERSION="1.1.6"
+: "${VERSION:=1.1.6}"
 
 # Runtime flags (safe defaults)
 : "${QUIET:=0}"
@@ -302,7 +302,7 @@ out_plain() {
 #
 # CRITICAL RULE:
 # This is the ONLY allowed way to produce non-newline product prompt text.
-# Return values from prompt_ask use class-B printf (data return), not this helper.
+# prompt_ask stores the answer in PROMPT_ASK_VALUE. Do not printf that answer.
 # All product output must respect --quiet and --json (never shown in those modes).
 #
 # INTENTIONAL DESIGN:
@@ -1991,16 +1991,21 @@ util_backup() {
 #
 # GENERAL PURPOSE:
 # Isolated scratch/cache root plus durable per-user persistence.
-# Cache prefers /dev/shm/cache/cache-${APP_NAME} → /tmp/cache/cache-${APP_NAME}
-# → ${XDG_CACHE_HOME}/cache-${APP_NAME}. Persistence is ${HOME}/.local/${APP_NAME}.
-# Create chosen leaf before echo. Sticky …/cache/ parent (1777 when creating).
+# Cache leaf is private to this login (mode 700):
+#   /dev/shm/cache/cache-${APP_NAME}-${USERNAME}
+#   → /tmp/cache/cache-${APP_NAME}-${USERNAME}
+#   → ${XDG_CACHE_HOME}/cache-${APP_NAME}.
+# Parents …/cache/ are mode 1777 so each login can add its own leaf.
+# Persistence is ${HOME}/.local/${APP_NAME} mode 700.
+# Path printf is a data return for $(…) capture, not a product message.
 #
 # CIAO PRINCIPLES APPLIED:
 # - Caution: Never assume /dev/shm, /tmp, or HOME exist or are writable.
 # - Intentional: Storage = cache folder AND persistence folder (about says both).
-# - Anti-fragile: Fall through when a cache leaf is not writable.
-# - Over-protect: Do not use /dev/shm/${APP_NAME}[-${USERNAME}] as cache;
-#   do not use ${HOME}/.local/bin as persistence.
+# - Anti-fragile: Fall through when a cache leaf is not owned by this login.
+# - Over-protect: Do not use /dev/shm/${APP_NAME} or /dev/shm/${APP_NAME}-${USERNAME}
+#   as the cache folder (that tree is domain volatile). Do not use
+#   ${HOME}/.local/bin as persistence. Do not keep a group-writable shared leaf.
 #
 # ALIGNMENT (live requirements only):
 # - requirement-shell-cli-storage.md
@@ -2018,13 +2023,15 @@ util_backup() {
 # 2026-07-14: Third fallback used XDG_CACHE_HOME with per-user isolation.
 # 2026-08-30: Cache leaf is cache-${APP_NAME} under …/cache/; persistence is
 #             ${HOME}/.local/${APP_NAME} (not cache, not bin).
+# 2026-09-23: Cache leaf is per-login mode 700 (L-14). Shared writable leaf rejected.
 #
-# Last updated: 2026-08-30
+# Last updated: 2026-09-23
 # =============================================================================
 
 util_preferred_cache_dir() {
     : "${APP_NAME:=countdown}"
-    printf '%s' "/dev/shm/cache/cache-${APP_NAME}"
+    : "${USERNAME:=unknown}"
+    printf '%s' "/dev/shm/cache/cache-${APP_NAME}-${USERNAME}"
 }
 
 util_fallback_cache_dir() {
@@ -2040,6 +2047,73 @@ util_persistent_storage_dir() {
     printf '%s' "${HOME}/.local/${APP_NAME}"
 }
 
+# Claim DIR as a private directory for this login (mode 700).
+# Reject symlinks and non-directories. chmod must succeed (this uid owns it).
+# Return 0 only when listing starts with drwx------. Do not print the path.
+util_claim_private_dir() {
+    _claim_dir="${1-}"
+    [ -n "${_claim_dir}" ] || return 1
+    if [ -L "${_claim_dir}" ]; then
+        unset _claim_dir
+        return 1
+    fi
+    if [ -e "${_claim_dir}" ] && [ ! -d "${_claim_dir}" ]; then
+        unset _claim_dir
+        return 1
+    fi
+    if [ ! -d "${_claim_dir}" ]; then
+        mkdir -m 700 "${_claim_dir}" 2>/dev/null || {
+            unset _claim_dir
+            return 1
+        }
+    fi
+    if [ -L "${_claim_dir}" ] || [ ! -d "${_claim_dir}" ]; then
+        unset _claim_dir
+        return 1
+    fi
+    chmod 700 "${_claim_dir}" 2>/dev/null || {
+        unset _claim_dir
+        return 1
+    }
+    _claim_ls=$(ls -ld "${_claim_dir}" 2>/dev/null) || {
+        unset _claim_dir _claim_ls
+        return 1
+    }
+    case "${_claim_ls}" in
+        drwx------*)
+            if [ -w "${_claim_dir}" ]; then
+                unset _claim_dir _claim_ls
+                return 0
+            fi
+            ;;
+    esac
+    unset _claim_dir _claim_ls
+    return 1
+}
+
+# Ensure PARENT exists as a sticky shared cache namespace (mode 1777 when created).
+# Existing parents are left in place. Return 0 when PARENT is a writable directory.
+util_ensure_cache_parent() {
+    _cache_parent="${1-}"
+    [ -n "${_cache_parent}" ] || return 1
+    if [ -L "${_cache_parent}" ]; then
+        unset _cache_parent
+        return 1
+    fi
+    if [ ! -d "${_cache_parent}" ]; then
+        mkdir -m 1777 "${_cache_parent}" 2>/dev/null || mkdir "${_cache_parent}" 2>/dev/null || {
+            unset _cache_parent
+            return 1
+        }
+    fi
+    if [ -d "${_cache_parent}" ] && [ ! -L "${_cache_parent}" ] && [ -w "${_cache_parent}" ]; then
+        unset _cache_parent
+        return 0
+    fi
+    unset _cache_parent
+    return 1
+}
+
 util_resolve_persistent_storage() {
     : "${APP_NAME:=countdown}"
     : "${HOME:=/tmp}"
@@ -2049,43 +2123,59 @@ util_resolve_persistent_storage() {
             out_die "Persistence storage must not be the install bin directory ${_persist}"
             ;;
     esac
-    if ! mkdir -p "${_persist}" 2>/dev/null || [ ! -w "${_persist}" ]; then
-        out_die "Cannot create persistence folder ${_persist}. Next: check that HOME is a writable directory, then rerun."
+    if [ -L "${_persist}" ]; then
+        out_die "Persistence folder ${_persist} is a symlink. Next: remove that symlink, then rerun."
     fi
-    echo "${_persist}"
-    unset _persist
+    _persist_parent=$(dirname "${_persist}")
+    mkdir -p "${_persist_parent}" 2>/dev/null || true
+    if ! util_claim_private_dir "${_persist}"; then
+        out_die "Cannot create persistence folder ${_persist}. Next: check that HOME is a writable directory you own, then rerun."
+    fi
+    printf '%s\n' "${_persist}"
+    unset _persist _persist_parent
     return 0
 }
 
 util_resolve_storage() {
     : "${APP_NAME:=countdown}"
     : "${HOME:=/tmp}"
+    : "${USERNAME:=unknown}"
     : "${XDG_CACHE_HOME:=${HOME}/.cache}"
     : "${STORAGE_DIR:=${XDG_CACHE_HOME}/cache-${APP_NAME}}"
 
+    # Previous shared leaf (no login in the name). If this uid owns it, make it private.
+    _legacy="/dev/shm/cache/cache-${APP_NAME}"
+    if [ -d "${_legacy}" ] && [ ! -L "${_legacy}" ]; then
+        chmod 700 "${_legacy}" 2>/dev/null || true
+    fi
+
     _storage_candidate=""
     if [ -d "/dev/shm" ] && [ -w "/dev/shm" ]; then
-        mkdir -m 1777 -p /dev/shm/cache 2>/dev/null || mkdir -p /dev/shm/cache 2>/dev/null || true
-        _pref="/dev/shm/cache/cache-${APP_NAME}"
-        if mkdir -p "${_pref}" 2>/dev/null && [ -w "${_pref}" ]; then
-            _storage_candidate="${_pref}"
+        if util_ensure_cache_parent "/dev/shm/cache"; then
+            _pref="/dev/shm/cache/cache-${APP_NAME}-${USERNAME}"
+            if util_claim_private_dir "${_pref}"; then
+                _storage_candidate="${_pref}"
+            fi
         fi
     fi
     if [ -z "${_storage_candidate}" ] && [ -w "/tmp" ]; then
-        mkdir -m 1777 -p /tmp/cache 2>/dev/null || mkdir -p /tmp/cache 2>/dev/null || true
-        _tmpc="/tmp/cache/cache-${APP_NAME}"
-        if mkdir -p "${_tmpc}" 2>/dev/null && [ -w "${_tmpc}" ]; then
-            _storage_candidate="${_tmpc}"
+        if util_ensure_cache_parent "/tmp/cache"; then
+            _tmpc="/tmp/cache/cache-${APP_NAME}-${USERNAME}"
+            if util_claim_private_dir "${_tmpc}"; then
+                _storage_candidate="${_tmpc}"
+            fi
         fi
     fi
     if [ -z "${_storage_candidate}" ]; then
-        _storage_candidate="${STORAGE_DIR}"
-        if ! mkdir -p "${_storage_candidate}" 2>/dev/null || [ ! -w "${_storage_candidate}" ]; then
-            out_die "Cannot create cache folder ${_storage_candidate}. Next: set HOME to a writable directory, then rerun."
+        _xdg_parent=$(dirname "${STORAGE_DIR}")
+        mkdir -p "${_xdg_parent}" 2>/dev/null || true
+        if ! util_claim_private_dir "${STORAGE_DIR}"; then
+            out_die "Cannot create cache folder ${STORAGE_DIR}. Next: set HOME to a writable directory you own, then rerun."
         fi
+        _storage_candidate="${STORAGE_DIR}"
     fi
-    echo "${_storage_candidate}"
-    unset _storage_candidate _pref _tmpc
+    printf '%s\n' "${_storage_candidate}"
+    unset _storage_candidate _pref _tmpc _legacy _xdg_parent
     return 0
 }
 
@@ -2095,9 +2185,9 @@ util_resolve_storage() {
 #
 # GENERAL PURPOSE:
 # Displays a message, shows current/default values if available, and waits
-# for user input. Returns the answer (or the default if user presses Enter).
-# Fully respects --quiet, --json, and non-TTY environments.
-# Uses the centralized output system (out_info / out_msg_n).
+# for user input. Stores the answer (or the default) in PROMPT_ASK_VALUE.
+# Call this function in the current shell. Fully respects --quiet, --json,
+# and non-TTY environments. Prompt text uses out_info / out_msg_n.
 #
 # This is the **Single Source of Truth** for all simple value prompts in the project.
 #
@@ -2110,39 +2200,35 @@ util_resolve_storage() {
 # !!! DO NOT MODIFY OR SIMPLIFY THIS FUNCTION !!!
 # Past AI assistants have repeatedly broken this by using raw printf/echo + read,
 # which violates the single output system, quiet/json handling, and TTY detection.
+# Do not wrap this function in command substitution. The answer does not
+# survive a subshell. Read PROMPT_ASK_VALUE in the current shell.
+# See requirement-shell-interactive-vs-noninteractive.md.
 #
-# PRINTF EXCEPTION (class B – function return-via-stdout only):
-# printf '%s' "${default|answer}" returns the chosen value for $(prompt_ask …)
-# capture. It is NOT the prompt UI. User-visible prompt text MUST stay on
-# out_info / out_msg_n. Do not replace those with raw printf + read.
-# See requirement-shell-output-requirements.md §2.1.1.
-#
-# Last reviewed: 2026-07-12
+# Last reviewed: 2026-09-23
 # =============================================================================
 
 prompt_ask() {
     # --- Safe Variable Defaults ---
     : "${JSON:=0}"
     : "${QUIET:=0}"
+    : "${TTY:=0}"
+    : "${INTERACTIVE:=0}"
 
     # set -u safe: missing args become empty defaults (INC-20260713-001 class)
     local message="${1-}"
     local default="${2-}"
     local current="${3-}"
 
+    PROMPT_ASK_VALUE="${default}"
+
     # Never prompt in non-interactive modes
     if [ "${JSON}" -eq 1 ] || [ "${QUIET}" -eq 1 ]; then
-        printf '%s' "${default}"
         return 0
     fi
 
     # Consume TTY SSOT (measured outside functions). INTERACTIVE=1 overrides.
-    : "${TTY:=0}"
-    if [ "${TTY}" -ne 1 ]; then
-        if [ "${INTERACTIVE:-0}" -ne 1 ]; then
-            printf '%s' "${default}"
-            return 0
-        fi
+    if [ "${TTY}" -ne 1 ] && [ "${INTERACTIVE}" -ne 1 ]; then
+        return 0
     fi
 
     # Show current value if present
@@ -2160,11 +2246,10 @@ prompt_ask() {
     local answer=""
     read -r answer || true
 
-    if [ -z "${answer}" ]; then
-        printf '%s' "${default}"
-    else
-        printf '%s' "${answer}"
+    if [ -n "${answer}" ]; then
+        PROMPT_ASK_VALUE="${answer}"
     fi
+    return 0
 }
 
 # =============================================================================
@@ -2748,7 +2833,7 @@ app_about() {
     : "${QUIET:=0}"
     : "${APP_NAME:=countdown}"
     # Version comes from global SSOT (VERSION="1.0.0" near top); default only if unset
-    : "${VERSION:=1.1.5}"
+    : "${VERSION:=1.1.6}"
     : "${GLOBAL_BIN:=/usr/local/bin}"
     : "${USER_BIN:=${HOME}/.local/bin}"
     : "${SCRIPT_URL:=}"
@@ -2845,6 +2930,7 @@ app_about() {
     : "${PERSISTENT_STORAGE_DIR:=$(util_resolve_persistent_storage)}"
     out_info "Cache folder (preferred): $(util_preferred_cache_dir)"
     out_info "Cache folder (fallback):  $(util_fallback_cache_dir)"
+    out_info "Cache folder (chosen):    ${EFFECTIVE_STORAGE_DIR}"
     out_info "Persistence storage:      $(util_persistent_storage_dir)"
 
     out_empty_line
@@ -2893,7 +2979,7 @@ app_about() {
 
 app_version() {
     : "${APP_NAME:=countdown}"
-    : "${VERSION:=1.1.5}"
+    : "${VERSION:=1.1.6}"
     : "${JSON:=0}"
     if [ "${JSON}" -eq 1 ]; then
         # Same machine contract as historical app_main inline path

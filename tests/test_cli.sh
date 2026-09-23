@@ -88,28 +88,67 @@ run_test_cli() {
 
     # --- TP-CLI-05: about cache folder AND persistence folder ---
     ci_isolated_env
+    _u=$(id -un 2>/dev/null || echo "unknown")
+    _pref="/dev/shm/cache/cache-${APP_NAME}-${_u}"
+    _fb="${CI_HOME}/.cache/cache-${APP_NAME}"
     _out=$(HOME="${CI_HOME}" XDG_CACHE_HOME="${CI_HOME}/.cache" sh "${SCRIPT}" --json about 2>/dev/null)
     _ec=$?
     assert_eq "TP-CLI-05 about --json exit 0" 0 "$_ec"
-    assert_contains "TP-CLI-05 about --json cache_preferred" "$_out" '"cache_preferred":"/dev/shm/cache/cache-countdown"'
-    assert_contains "TP-CLI-05 about --json cache_fallback" "$_out" "cache-countdown"
+    assert_contains "TP-CLI-05 about --json cache_preferred" "$_out" "\"cache_preferred\":\"${_pref}\""
+    assert_contains "TP-CLI-05 about --json cache_fallback" "$_out" "\"cache_fallback\":\"${_fb}\""
     assert_contains "TP-CLI-05 about --json persistence_storage" "$_out" "${CI_HOME}/.local/countdown"
     assert_contains "TP-CLI-05 about --json effective_storage" "$_out" '"effective_storage"'
     assert_not_contains "TP-CLI-05 about --json has no CHECKSUM" "$_out" "CHECKSUM"
     assert_not_contains "TP-CLI-05 about --json has no storage_dir alias" "$_out" '"storage_dir"'
+    if printf '%s' "$_out" | grep -q "\"effective_storage\":\"${_pref}\""; then
+        _eff="${_pref}"
+    elif printf '%s' "$_out" | grep -q "\"effective_storage\":\"${_fb}\""; then
+        _eff="${_fb}"
+    else
+        _eff=""
+        t_fail "TP-STORAGE-04 effective_storage is neither preferred nor fallback"
+    fi
+    if [ -n "${_eff}" ]; then
+        _mode=$(ls -ld "${_eff}" 2>/dev/null || true)
+        case "${_mode}" in
+            drwx------*) t_pass "TP-STORAGE-04 cache leaf mode 700 (${_eff})" ;;
+            *) t_fail "TP-STORAGE-04 cache leaf not private (${_mode})" ;;
+        esac
+    fi
 
     _out=$(HOME="${CI_HOME}" XDG_CACHE_HOME="${CI_HOME}/.cache" sh "${SCRIPT}" about 2>/dev/null)
     assert_contains "TP-CLI-05 about human Cache folder (preferred)" "$_out" "Cache folder (preferred)"
     assert_contains "TP-CLI-05 about human Cache folder (fallback)" "$_out" "Cache folder (fallback)"
+    assert_contains "TP-CLI-05 about human Cache folder (chosen)" "$_out" "Cache folder (chosen)"
     assert_contains "TP-CLI-05 about human Persistence storage" "$_out" "Persistence storage"
-    assert_contains "TP-CLI-05 about human preferred path" "$_out" "/dev/shm/cache/cache-countdown"
+    assert_contains "TP-CLI-05 about human preferred path" "$_out" "${_pref}"
     assert_contains "TP-CLI-05 about human persistence path" "$_out" "${CI_HOME}/.local/countdown"
+    if [ -n "${_eff}" ]; then
+        assert_contains "TP-CLI-05 about human chosen path" "$_out" "${_eff}"
+    fi
     if [ -d "${CI_HOME}/.local/countdown" ]; then
         t_pass "TP-CLI-05 persistence folder created"
     else
         t_fail "TP-CLI-05 persistence folder missing (${CI_HOME}/.local/countdown)"
     fi
+    _pmode=$(ls -ld "${CI_HOME}/.local/countdown" 2>/dev/null || true)
+    case "${_pmode}" in
+        drwx------*) t_pass "TP-STORAGE-04 persistence folder mode 700" ;;
+        *) t_fail "TP-STORAGE-04 persistence folder not private (${_pmode})" ;;
+    esac
     ci_cleanup_env
+
+    # --- TP-CLI-13: prompt_ask uses PROMPT_ASK_VALUE; no $(prompt_ capture ---
+    if grep -q 'PROMPT_ASK_VALUE="${default}"' "${SCRIPT}" && grep -q 'PROMPT_ASK_VALUE="${answer}"' "${SCRIPT}"; then
+        t_pass "TP-CLI-13 prompt_ask assigns PROMPT_ASK_VALUE"
+    else
+        t_fail "TP-CLI-13 prompt_ask does not assign PROMPT_ASK_VALUE"
+    fi
+    if grep -n '\$[(]prompt_' "${SCRIPT}" >/dev/null 2>&1; then
+        t_fail "TP-CLI-13 ship unit captures a prompt helper"
+    else
+        t_pass "TP-CLI-13 no command-substitution of prompt helpers"
+    fi
 
     # --- TP-CLI-06: unknown command ---
     _err=$(sh "${SCRIPT}" no-such-command 2>&1 >/dev/null)

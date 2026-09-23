@@ -17,11 +17,13 @@ Agents doing any product or origin review **MUST** re-check these points even if
 | ID | Lesson | Why it returns | Re-check |
 |----|--------|----------------|----------|
 | L-01 | Domain/install **errors in JSON mode must use stderr** (`out_json_error`), never `out_json "error"` on stdout | Easy to copy a “rich” success emitter for errors | already_running / invalid_* / no_* paths |
-| L-02 | **Per-user isolation** for volatile state requires a **private directory** (`chmod 700`), not only a username prefix in a world-writable `/dev/shm` or `/tmp` | Prefix-only feels isolated; sticky-bit + umask still leak/squat | domain resolve base dir vs `util_resolve_storage` |
+| L-02 | **Per-user isolation** for volatile state requires a **private directory** (`chmod 700`), not only a username prefix in a world-writable `/dev/shm` or `/tmp` | Prefix-only feels isolated; sticky-bit + umask still leak/squat | domain resolve base dir vs `util_resolve_storage`. Both closed in 1.1.6 (cache leaf is per-login mode 700 — **L-14**) |
 | L-03 | **`inst_get_version` must share SSOT** with install/uninstall path selection (non-root: prefer user-local when present) | Global-first “works” on single-install machines; dual-install skews update | version-check / self-update path |
 | L-04 | Uninstall PATH cleanup must **not** `sed` delete every line matching `.local/bin` | Over-broad cleanup “helps” empty USER_BIN but wrecks cargo/pipx/nvm | `inst_self_uninstall_cleanup_path` |
 | L-05 | **`rm` failure is not success** for stop/kill/reset | Ignoring `rm` status looks green while state remains | domain stop/kill |
 | L-06 | **`util_json_escape` must handle controls** (`\n` `\r` `\t` at minimum); name policy must not allow raw newlines | Escaping only `\` `"` is a common incomplete helper | escape helper + sanitize name |
+| L-14 | Type 0 **cache leaf** must be private to this login (mode `700`). A mode `1777` parent plus “is writable?” accepts a group-writable or planted leaf, and `TMPDIR` follows it | Shared app leaf looks isolated; umask `002` yields mode `775`. **Closed in 1.1.6** | `util_claim_private_dir`; TP-STORAGE-04/05 |
+| L-15 | A helper that `read`s is called in **this** shell. Value prompts assign **`PROMPT_ASK_VALUE`**. `$()` is for pure-data helpers only | Class-B “callers must capture” reteaches the anti-pattern. **Closed in 1.1.6** | `prompt_ask` + TP-CLI-13 |
 
 ---
 

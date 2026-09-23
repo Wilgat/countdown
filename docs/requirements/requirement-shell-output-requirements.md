@@ -63,12 +63,14 @@ It implements **CIAO Principle 5 — Single Source of Output** (cloudgen/ciao **
 | Exception class | Rule | Live examples in `./countdown` |
 |-----------------|------|-----------------------------------|
 | **A. Inside output SSOT** | Only `out_text`, `out_json`, and `out_json_error` may `printf` to fd 1/2 for **product** human or JSON lines. Nested `printf … \| sed` used only to escape strings for those emitters is part of the same SSOT. | `out_text` level cases; `out_json` / `out_json_error` body builders |
-| **B. Function return-via-stdout** | A helper may `printf '%s' "$value"` **solely** so callers capture it with `$(…)`. Prefer `printf` over `echo`. Callers must capture; bare top-level invocation must not be used as the user-facing message path. | `inst_self_uninstall_determine_bin`, `util_get_install_bin_path`, `inst_get_version`, `util_preferred_cache_dir`, `util_fallback_cache_dir`, `util_persistent_storage_dir`, `util_resolve_persistent_storage`, `util_resolve_storage`, `util_get_current_shell`, `prompt_ask` (answer/default return only; prompt text still via `out_*`) |
+| **B. Function return-via-stdout** | A helper may `printf '%s' "$value"` **solely** so callers capture it with `$(…)`. Prefer `printf` over `echo`. Callers must capture; bare top-level invocation must not be used as the user-facing message path. **Not** for a helper whose body contains `read`. | `inst_self_uninstall_determine_bin`, `util_get_install_bin_path`, `inst_get_version`, `util_preferred_cache_dir`, `util_fallback_cache_dir`, `util_persistent_storage_dir`, `util_resolve_persistent_storage`, `util_resolve_storage`, `util_get_current_shell` |
 | **C. File I/O (redirected)** | `printf … >> "$file"` that appends config/content to a path is file mutation, not product stdout/stderr messaging. User-visible “what changed” lines still go through `out_*`. | `path_add_bashrc`, `path_add_zshrc`, `path_add_fish` |
 | **D. Tool protocol / computation pipes** | `printf` feeding another program (checksum verify, filters) with product status still reported via `out_*`. | `inst_perform_install_download_with_checksum` → `printf … \| sha256sum -c` |
 | **E. Command-sub fallbacks** | Prefer `${var:-default}` where possible; `cmd \|\| printf '%s' "unknown"` (or `echo`) assigned into a variable for logic only. | `USERNAME="$(id -un … \|\| echo "unknown")"`, remote version empty fallbacks, boolean strings built for `out_json` fields |
 
 **Still forbidden:** product banners, install progress, errors, or JSON results via raw print outside classes A–E; using return-via-stdout as a substitute for `out_info` / `out_plain`; writing user text to the terminal while claiming “it is only a return value.”
+
+**Read helpers are not class B.** `prompt_ask` stores the answer in `PROMPT_ASK_VALUE` in the current shell. Callers **MUST NOT** capture `prompt_ask` or `prompt_yes_no` with `$(…)`. Prompt text stays on `out_*`.
 
 ### 2.1.2 Mandatory SSOT remarks (pipeline uses — CIAO v2.10.1+)
 

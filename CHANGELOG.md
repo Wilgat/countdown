@@ -10,6 +10,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [1.1.6] - 2026-09-23
+
+### Changed
+- Cache scratch is a private per-login leaf: `/dev/shm/cache/cache-countdown-<user>` (then `/tmp/cache/…`, then `~/.cache/cache-countdown`), mode `700`
+- `about` prints **Cache folder (chosen)** for the live scratch directory
+- Persistence folder is created mode `700`
+- `prompt_ask` stores the answer in `PROMPT_ASK_VALUE` in the current shell
+
+### Fixed
+- A shared group-writable cache leaf is no longer accepted as scratch or as `TMPDIR`
+- `--persist` tests check the real cache paths, not `~/.cache/countdown`
+
+---
+
 ## [1.1.5] - 2026-09-06
 
 ### Changed

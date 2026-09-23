@@ -190,15 +190,26 @@ else:
     assert_eq "TP-STORAGE-02 persist start exit 0" 0 "$_ec"
     assert_contains "TP-STORAGE-02 persist mode note or success" "$_out" "started"
     _u=$(id -un 2>/dev/null || echo "unknown")
-    if [ -f "${CI_HOME}/.local/${APP_NAME}/${APP_NAME}_${_u}_persist-t" ]; then
+    _state="${CI_HOME}/.local/${APP_NAME}/${APP_NAME}_${_u}_persist-t"
+    if [ -f "${_state}" ]; then
         t_pass "TP-STORAGE-02 persist state under persistence folder"
     else
         t_fail "TP-STORAGE-02 persist state missing under ${CI_HOME}/.local/${APP_NAME}"
     fi
-    if [ -e "${CI_HOME}/.cache/${APP_NAME}" ]; then
-        t_fail "TP-STORAGE-02 persist must not use cache folder (${CI_HOME}/.cache/${APP_NAME})"
-    else
-        t_pass "TP-STORAGE-02 persist did not write cache folder"
+    _cache_hit=0
+    for _c in \
+        "/dev/shm/cache/cache-${APP_NAME}-${_u}" \
+        "/tmp/cache/cache-${APP_NAME}-${_u}" \
+        "${CI_HOME}/.cache/cache-${APP_NAME}" \
+        "${CI_HOME}/.cache/${APP_NAME}"
+    do
+        if [ -e "${_c}/${APP_NAME}_${_u}_persist-t" ]; then
+            _cache_hit=1
+            t_fail "TP-STORAGE-05 persist state under cache folder ${_c}"
+        fi
+    done
+    if [ "${_cache_hit}" -eq 0 ]; then
+        t_pass "TP-STORAGE-05 persist state is not under a cache folder"
     fi
 
     _out=$(_run list --persist 2>/dev/null)

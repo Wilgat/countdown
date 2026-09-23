@@ -1,7 +1,7 @@
 # Review-driven test plan (countdown)
 
 Maps **portable TP families** (proof molds) to product-root `tests/`.  
-Status: **have** = covered by suite today · **n/a** = not applicable · **optional** = behind flag.
+Status: **have** = covered by suite today · **n/a** = not applicable · **optional** = behind flag · **TODO** = required, not in the suite yet.
 
 Runner: `./tests/run.sh`  
 **RTM:** `reviews/requirement-test-matrix.md`
@@ -30,7 +30,7 @@ Runner: `./tests/run.sh`
 | **TP-CLI-02** | version human + JSON | **have** | `test_cli.sh` |
 | **TP-CLI-03** | help Type 0 + domain rows; no CHECKSUM | **have** | `test_cli.sh` |
 | **TP-CLI-04** | help/about JSON purity | **have** | `test_cli.sh` |
-| **TP-CLI-05** | about cache folder + persistence folder | **have** | `test_cli.sh`; `RQ-SHELL-CLI-STORAGE` |
+| **TP-CLI-05** | about cache folder + persistence folder + chosen line | **have** | `test_cli.sh`; `RQ-SHELL-CLI-STORAGE` |
 | **TP-CLI-06** | unknown command + JSON error | **have** | `test_cli.sh` |
 | **TP-CLI-07** | quiet / `-q` | **have** | `test_cli.sh` |
 | **TP-CLI-08** | `env -u HOME` under set -u | **have** | with **TP-U-01** |
@@ -38,6 +38,7 @@ Runner: `./tests/run.sh`
 | **TP-CLI-10** | bashrc+sdkman | **n/a** | no sdkman source path |
 | **TP-CLI-11** | self-uninstall refuse JSON | **have** | `test_cli.sh` |
 | **TP-CLI-12** | `out_json` string keys | **have** | string-escape contract; `@` raw n/a |
+| **TP-CLI-13** | `prompt_ask` assigns `PROMPT_ASK_VALUE`; ship unit has no `$(prompt_` call | **have** | `test_cli.sh`; L-15 |
 
 ---
 
@@ -127,6 +128,8 @@ Policy: `policy-harness-id-notation` §5.
 | **TP-STORAGE-01** | Volatile private-dir path | **have** | `/dev/shm|tmp/${APP}-${USER}/…` | was **TP-COUNTDOWN-09** |
 | **TP-STORAGE-02** | `--persist` start/list/stop | **have** | domain suite | was **TP-COUNTDOWN-08** |
 | **TP-STORAGE-03** | Corrupted state → `corrupted_data` | **have** | domain suite | was **TP-COUNTDOWN-10** |
+| **TP-STORAGE-04** | Cache leaf and persistence folder mode `700` | **have** | `test_cli.sh`; L-14 | — |
+| **TP-STORAGE-05** | `--persist` state file is under `~/.local/<app>` and not under a cache leaf | **have** | `test_countdown_domain.sh`; L-14 | — |
 
 **Legacy map:** review-local `TP-01..10` → families; storage **TP-COUNTDOWN-08..10** → **`TP-STORAGE-01..03`**; ops remain **`TP-COUNTDOWN-01..07`**.
 

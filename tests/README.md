@@ -42,7 +42,7 @@ RUN_ONLINE_CURL_TESTS=1 ./tests/run.sh
 | Requirement-ID | Primary TP families |
 |----------------|---------------------|
 | `RQ-SHELL-CLI-INTERFACE` | TP-CLI-* |
-| `RQ-SHELL-CLI-STORAGE` | TP-CLI-05, TP-STORAGE-02 |
+| `RQ-SHELL-CLI-STORAGE` | TP-CLI-05, TP-STORAGE-02, TP-STORAGE-04, TP-STORAGE-05 |
 | `RQ-SHELL-CLI-ZERO-ARGUMENTS` | TP-CLI-09, TP-LC-01, TP-CURL-02/03/08 |
 | `RQ-SHELL-OUTPUT-REQUIREMENTS` | TP-CLI-02/04/06/07/12, TP-COUNTDOWN-04 |
 | `RQ-SHELL-AUTOMATIC-CHECKSUM` | TP-CSUM-* |
@@ -59,4 +59,4 @@ Primary citation: **TP-*** / **RQ-*** (policy-harness-id-notation). Paths second
 
 - No secrets and no root.
 - Install lifecycle and curl suites serve the checkout over `127.0.0.1` (does not require public raw GitHub).
-- Domain tests use isolated `HOME` for the **persistence folder** (`~/.local/countdown`) and clean private volatile countdown dirs for the current user after the suite. Type 0 **TP-CLI-05** proves `about` names cache folder **and** persistence folder.
+- Domain tests use isolated `HOME` for the **persistence folder** (`~/.local/countdown`) and clean private volatile countdown dirs for the current user after the suite. Type 0 **TP-CLI-05** proves `about` names the cache folder in use, preferred, fallbacks, and persistence. **TP-STORAGE-05** proves `--persist` state is not under a cache tree.

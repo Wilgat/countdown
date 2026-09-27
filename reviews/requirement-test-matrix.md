@@ -1,7 +1,7 @@
 # Requirement ↔ test matrix — countdown
 
 **Product:** countdown  
-**Updated:** 2026-09-06  
+**Updated:** 2026-09-27  
 **Map:** `reviews/test-plan.md`  
 **Suite:** `./tests/run.sh`  
 **Portable RTM mold:** `PM-REQUIREMENT-TEST-TRACEABILITY` (local harness)
@@ -14,7 +14,7 @@ Git-surface: versioned REQs list TP + `tests/*` + `reviews/*` only (no `docs/tem
 | **RQ-CLASS-SOFTWARE-DEV** | requirement-class-software-dev | **LM-REQUIREMENT-CLASS-SOFTWARE-DEV** | TP-CLASS-01; suite green | static + `tests/run.sh` | **have** |
 | **RQ-BOOTSTRAP-CHAIN** | requirement-bootstrap-chain | **LM-BOOTSTRAP-CHAIN** | **TP-BOOT-01/02**; TP-CLASS-01 | static + reviews + suite | **have** |
 | **RQ-SHELL-CLI-INTERFACE** | requirement-shell-cli-interface | **LM-CLI-INTERFACE** | TP-CLI-*; TP-COUNTDOWN-01 | `test_cli.sh`, `test_countdown_domain.sh` | **have** |
-| **RQ-SHELL-CLI-STORAGE** | requirement-shell-cli-storage | **LM-SHELL-CLI-STORAGE** | TP-CLI-05; TP-STORAGE-02 | `test_cli.sh`, `test_countdown_domain.sh` | **have** |
+| **RQ-SHELL-CLI-STORAGE** | requirement-shell-cli-storage | **LM-SHELL-CLI-STORAGE** | TP-CLI-05; TP-STORAGE-02, 04, 05 | `test_cli.sh`, `test_countdown_domain.sh` | **have** |
 | **RQ-SHELL-CLI-ZERO-ARGUMENTS** | requirement-shell-cli-zero-arguments | **LM-SHELL-CLI-ZERO-ARGUMENTS** | TP-CLI-09; TP-LC-01/09; TP-CURL-02/03/08; TP-U-02 | CLI, lifecycle, curl | **have** |
 | **RQ-SHELL-OUTPUT-REQUIREMENTS** | requirement-shell-output-requirements | **LM-OUTPUT-REQUIREMENTS** | TP-CLI-02/04/06/07/12; TP-COUNTDOWN-04 | CLI, domain | **have** |
 | **RQ-SHELL-AUTOMATIC-CHECKSUM** | requirement-shell-automatic-checksum | **LM-AUTOMATIC-CHECKSUM** | TP-CSUM-01..05; TP-LC-06 | CLI, lifecycle | **have** |

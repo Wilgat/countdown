@@ -130,7 +130,7 @@ Domain law **MUST** define (when claimed):
 | **Duration grammar** | Forms such as `25m`, `90s`, `1h`, `1h30m`, `2h15m45s`, or plain seconds number; invalid/zero → `invalid_duration`; missing → `missing_duration` |
 | **Names** | Default `default`; path-safe denylist (path seps, shell metachar, space/tab); CR/LF rejected; `invalid_name` |
 | **Volatile storage** | Private per-user dir under volatile root (e.g. `/dev/shm/${APP_NAME}-${USERNAME}`) with restrictive mode when possible. This is **not** the Type 0 cache folder. |
-| **Cache folder** | Type 0 scratch — owned by `requirement-shell-cli-storage` (preferred `/dev/shm/cache/cache-${APP_NAME}-${USERNAME}`, mode `700`). **MUST NOT** store `--persist` countdown state here. |
+| **Cache folder** | Type 0 scratch — owned by `requirement-shell-cli-storage` (Linux preferred `/dev/shm/cache/cache-${APP_NAME}-${login}-$$`, mode `700`; Git Bash and Mac preferred `/tmp/cache/cache-${APP_NAME}-${login}-$$`). **MUST NOT** store `--persist` countdown state here. |
 | **Persistence folder** | Durable `--persist` state under `${HOME}/.local/${APP_NAME}` (not `${HOME}/.local/bin`, not XDG cache / `${HOME}/.cache/${APP_NAME}`). Private `/tmp/${APP_NAME}-${USERNAME}-persistent` fallback when `$HOME` is unusable. |
 | **Isolation** | Per-user; not shared flat world-writable name-only files as sole isolation |
 | **vs timer** | Separate product; help may note timer is count-up, countdown is remaining-time |
@@ -265,6 +265,6 @@ A domain change for countdown is **not done** if any fail:
 | **TP-PAYLOAD-*** Type O-P scaffold | n/a — not Type O-P payload product | n/a |
 
 
-**Last Updated**: 2026-08-30  
+**Last Updated**: 2026-09-27  
 **Owner**: countdown project maintainers  
 **Alignment**: Registry `docs/requirements/index.md`; peer shell requirements in §6; CIAO (https://github.com/cloudgen/ciao); CIAO-Lite (https://github.com/cloudgen/ciao-lite).

@@ -10,6 +10,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [1.1.7] - 2026-09-27
+
+### Changed
+- Cache scratch is one private folder per login and per process (mode `700`). Linux: `/dev/shm/cache/cache-countdown-<you>-<pid>`, then `/tmp/cache/…`, then `~/.cache/cache-countdown-<pid>`. Git Bash: `/tmp/cache/…`, then `~/AppData/Local/Temp/cache-countdown-<pid>`. Mac: `/tmp/cache/…`, then `~/Library/Caches/cache-countdown-<pid>`, then `~/cache/cache-countdown-<pid>`
+- `about` prints **Cache folder used**, **preferred**, **1st fallback**, and **2nd fallback** when this computer has one. A skipped tier prints no warning and no error
+- Persistence stays `~/.local/countdown` (no login suffix and no process id)
+- Law: `requirement-shell-cli-storage` **1.2.0**. Suite **TP-CLI-05** · **TP-STORAGE-04** · **TP-STORAGE-05**
+
+### Security
+- Regenerated `countdown.sha256` for **1.1.7**
+
+---
+
 ## [1.1.6] - 2026-09-23
 
 ### Changed

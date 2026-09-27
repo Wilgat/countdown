@@ -1,6 +1,6 @@
 # countdown - Lightweight per-user named countdown timers
 
-![Version](https://img.shields.io/badge/Version-1.1.6-blue?style=flat-square)
+![Version](https://img.shields.io/badge/Version-1.1.7-blue?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 [![CIAO](https://img.shields.io/badge/Philosophy-CIAO%20(Caution%20%E2%80%A2%20Intentional%20%E2%80%A2%20Anti--fragile%20%E2%80%A2%20Over--protect)-purple.svg)](https://github.com/cloudgen/ciao)
 [![Shell](https://img.shields.io/badge/Shell-POSIX%20sh-orange?style=flat-square)]()
@@ -34,11 +34,11 @@ Author: **Wilgat Wong** &lt;wilgat.wong@gmail.com&gt;
 - **Duration start** — `countdown start work 25m` (required duration)
 - **Remaining-time status/stop** — not count-up elapsed timers
 - **Two storage folders**:
-  - **Cache folder** (scratch): private preferred `/dev/shm/cache/cache-countdown-<you>` (mode 700)
+  - **Cache folder** (scratch): each login and each process gets its own private leaf (mode 700). On Linux that is `/dev/shm/cache/cache-countdown-<you>-<pid>`, then `/tmp/cache/…`, then `~/.cache/cache-countdown-<pid>`. Git Bash uses `/tmp/cache/…`, then `~/AppData/Local/Temp/cache-countdown-<pid>`. Mac uses `/tmp/cache/…`, then `~/Library/Caches/cache-countdown-<pid>`, then `~/cache/cache-countdown-<pid>`. A skipped folder is silent.
   - **Persistence folder** (`--persist`): durable `~/.local/countdown/` (mode 700)
 - **Volatile vs persistent countdowns** — default is a private per-user ram/tmp dir; `--persist` uses the persistence folder
-- `countdown about` names the **cache folder** (preferred, fallback, and the one in use) and the **persistence folder**
-- Smart fallbacks for `/dev/shm`, missing `$HOME`, restricted containers, and Git Bash
+- `countdown about` names the **cache folder** in use, the preferred path, each fallback this computer has, and the **persistence folder**
+- Smart fallbacks for `/dev/shm`, missing `$HOME`, restricted containers, Git Bash, and Mac
 - **Cryptographic download verification** (automatic `.sha256` sidecar; optional `CHECKSUM=` pin)
 - One-liner install via `curl | sh`
 - User (`~/.local/bin`) and system-wide (`/usr/local/bin`) installation
@@ -226,6 +226,6 @@ MIT License — see the [LICENSE](LICENSE) file for details.
 
 ## Last Update
 
-2026-09-23 — 1.1.6: cache scratch is a private per-login folder (mode 700); `about` names the cache folder in use; value prompts keep the answer in the current shell.
+2026-09-27 — 1.1.7: cache scratch is one private folder per login and per process; `about` names the folder in use plus preferred and fallback paths. A skipped cache folder stays silent.
 
 **Made with care and a healthy dose of paranoia.** ⏱️

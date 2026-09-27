@@ -87,50 +87,111 @@ run_test_cli() {
     assert_not_contains "TP-CLI-04 TP-CSUM-05 about --json must not include CHECKSUM" "$_out" "CHECKSUM"
 
     # --- TP-CLI-05: about cache folder AND persistence folder ---
+    # Linux / Git Bash / Mac chains, silent skip, leaf mode 700 (TP-STORAGE-04).
     ci_isolated_env
-    _u=$(id -un 2>/dev/null || echo "unknown")
-    _pref="/dev/shm/cache/cache-${APP_NAME}-${_u}"
-    _fb="${CI_HOME}/.cache/cache-${APP_NAME}"
-    _out=$(HOME="${CI_HOME}" XDG_CACHE_HOME="${CI_HOME}/.cache" sh "${SCRIPT}" --json about 2>/dev/null)
+    _login=$(id -un 2>/dev/null || echo "unknown")
+    _out=$(HOME="${CI_HOME}" sh "${SCRIPT}" --json about 2>/dev/null)
     _ec=$?
     assert_eq "TP-CLI-05 about --json exit 0" 0 "$_ec"
-    assert_contains "TP-CLI-05 about --json cache_preferred" "$_out" "\"cache_preferred\":\"${_pref}\""
-    assert_contains "TP-CLI-05 about --json cache_fallback" "$_out" "\"cache_fallback\":\"${_fb}\""
+    assert_contains "TP-CLI-05 about --json cache_used" "$_out" '"cache_used"'
+    assert_contains "TP-CLI-05 about --json cache_preferred" "$_out" '"cache_preferred"'
+    assert_contains "TP-CLI-05 about --json cache_fallback" "$_out" '"cache_fallback"'
+    assert_contains "TP-CLI-05 about --json cache_fallback_2" "$_out" '"cache_fallback_2"'
     assert_contains "TP-CLI-05 about --json persistence_storage" "$_out" "${CI_HOME}/.local/countdown"
     assert_contains "TP-CLI-05 about --json effective_storage" "$_out" '"effective_storage"'
+    assert_contains "TP-CLI-05 about --json storage_dir" "$_out" '"storage_dir"'
     assert_not_contains "TP-CLI-05 about --json has no CHECKSUM" "$_out" "CHECKSUM"
-    assert_not_contains "TP-CLI-05 about --json has no storage_dir alias" "$_out" '"storage_dir"'
-    if printf '%s' "$_out" | grep -q "\"effective_storage\":\"${_pref}\""; then
-        _eff="${_pref}"
-    elif printf '%s' "$_out" | grep -q "\"effective_storage\":\"${_fb}\""; then
-        _eff="${_fb}"
+    _pref=$(printf '%s' "$_out" | sed -n 's/.*"cache_preferred":"\([^"]*\)".*/\1/p' | head -n1)
+    _pid="${_pref##*-}"
+    case "${_pref}" in
+        /dev/shm/cache/cache-"${APP_NAME}"-"${_login}"-[0-9]*)
+            t_pass "TP-CLI-05 cache_preferred is shm login process leaf"
+            ;;
+        *) t_fail "TP-CLI-05 cache_preferred unexpected: '${_pref:-empty}'" ;;
+    esac
+    _fb=$(printf '%s' "$_out" | sed -n 's/.*"cache_fallback":"\([^"]*\)".*/\1/p' | head -n1)
+    assert_eq "TP-CLI-05 cache_fallback 1st" "/tmp/cache/cache-${APP_NAME}-${_login}-${_pid}" "${_fb}"
+    _fb2=$(printf '%s' "$_out" | sed -n 's/.*"cache_fallback_2":"\([^"]*\)".*/\1/p' | head -n1)
+    assert_eq "TP-CLI-05 cache_fallback 2nd" "${CI_HOME}/.cache/cache-${APP_NAME}-${_pid}" "${_fb2}"
+    _sdir=$(printf '%s' "$_out" | sed -n 's/.*"storage_dir":"\([^"]*\)".*/\1/p' | head -n1)
+    assert_eq "TP-CLI-05 storage_dir is 1st fallback" "${_fb}" "${_sdir}"
+    _used=$(printf '%s' "$_out" | sed -n 's/.*"cache_used":"\([^"]*\)".*/\1/p' | head -n1)
+    _eff=$(printf '%s' "$_out" | sed -n 's/.*"effective_storage":"\([^"]*\)".*/\1/p' | head -n1)
+    assert_eq "TP-CLI-05 cache_used matches effective" "${_eff}" "${_used}"
+    if [ -n "$_eff" ] && [ -d "$_eff" ]; then
+        t_pass "TP-STORAGE-04 effective cache directory exists"
     else
-        _eff=""
-        t_fail "TP-STORAGE-04 effective_storage is neither preferred nor fallback"
+        t_fail "TP-STORAGE-04 effective cache missing: '${_eff:-empty}'"
     fi
+    case "${_eff}" in
+        /dev/shm/"${APP_NAME}"|/dev/shm/"${APP_NAME}"-*)
+            t_fail "TP-CLI-05 effective cache must not be ram-drive project shape: '${_eff}'"
+            ;;
+        *) t_pass "TP-CLI-05 effective cache is not a ram-drive project shape" ;;
+    esac
+    _mode=$(ls -ld "${_eff}" 2>/dev/null || true)
+    case "${_mode}" in
+        drwx------*) t_pass "TP-STORAGE-04 cache leaf mode 700 (${_eff})" ;;
+        *) t_fail "TP-STORAGE-04 cache leaf not private (${_mode})" ;;
+    esac
+    _err=$(HOME="${CI_HOME}" COUNTDOWN_CACHE_SKIP=preferred \
+        sh "${SCRIPT}" about 2>&1 >/dev/null)
+    assert_not_contains "TP-CLI-05 silent cache fallback" "${_err}" "fallback"
+    assert_not_contains "TP-CLI-05 silent cache fallback error" "${_err}" "Cannot create cache"
+    _skip=$(HOME="${CI_HOME}" COUNTDOWN_CACHE_SKIP=preferred \
+        sh "${SCRIPT}" --json about 2>/dev/null)
+    _skip_eff=$(printf '%s' "$_skip" | sed -n 's/.*"effective_storage":"\([^"]*\)".*/\1/p' | head -n1)
+    _skip_fb=$(printf '%s' "$_skip" | sed -n 's/.*"cache_fallback":"\([^"]*\)".*/\1/p' | head -n1)
+    assert_eq "TP-CLI-05 skipped preferred uses 1st fallback" "${_skip_fb}" "${_skip_eff}"
+    _gb=$(HOME="${CI_HOME}" COUNTDOWN_CACHE_HOST=gitbash sh "${SCRIPT}" --json about 2>/dev/null)
+    _gb_pref=$(printf '%s' "$_gb" | sed -n 's/.*"cache_preferred":"\([^"]*\)".*/\1/p' | head -n1)
+    _gb_pid="${_gb_pref##*-}"
+    assert_eq "TP-CLI-05 gitbash preferred" "/tmp/cache/cache-${APP_NAME}-${_login}-${_gb_pid}" "${_gb_pref}"
+    _gb_fb=$(printf '%s' "$_gb" | sed -n 's/.*"cache_fallback":"\([^"]*\)".*/\1/p' | head -n1)
+    assert_eq "TP-CLI-05 gitbash 1st fallback" "${CI_HOME}/AppData/Local/Temp/cache-${APP_NAME}-${_gb_pid}" "${_gb_fb}"
+    assert_contains "TP-CLI-05 gitbash json has cache_fallback_2" "${_gb}" '"cache_fallback_2":""'
+    _gb_fb2=$(printf '%s' "$_gb" | sed -n 's/.*"cache_fallback_2":"\([^"]*\)".*/\1/p' | head -n1)
+    assert_eq "TP-CLI-05 gitbash no 2nd fallback" "" "${_gb_fb2}"
+    _mac=$(HOME="${CI_HOME}" COUNTDOWN_CACHE_HOST=mac sh "${SCRIPT}" --json about 2>/dev/null)
+    _mac_pref=$(printf '%s' "$_mac" | sed -n 's/.*"cache_preferred":"\([^"]*\)".*/\1/p' | head -n1)
+    _mac_pid="${_mac_pref##*-}"
+    assert_eq "TP-CLI-05 mac preferred" "/tmp/cache/cache-${APP_NAME}-${_login}-${_mac_pid}" "${_mac_pref}"
+    _mac_fb=$(printf '%s' "$_mac" | sed -n 's/.*"cache_fallback":"\([^"]*\)".*/\1/p' | head -n1)
+    assert_eq "TP-CLI-05 mac 1st fallback" "${CI_HOME}/Library/Caches/cache-${APP_NAME}-${_mac_pid}" "${_mac_fb}"
+    _mac_fb2=$(printf '%s' "$_mac" | sed -n 's/.*"cache_fallback_2":"\([^"]*\)".*/\1/p' | head -n1)
+    assert_eq "TP-CLI-05 mac 2nd fallback" "${CI_HOME}/cache/cache-${APP_NAME}-${_mac_pid}" "${_mac_fb2}"
+    _hum=$(HOME="${CI_HOME}" sh "${SCRIPT}" about 2>/dev/null)
+    assert_contains "TP-CLI-05 about human Cache folder used" "${_hum}" "Cache folder used:"
+    assert_contains "TP-CLI-05 about human Cache folder preferred" "${_hum}" "Cache folder (preferred):"
+    assert_contains "TP-CLI-05 about human Cache folder 1st fallback" "${_hum}" "Cache folder (1st fallback):"
+    assert_contains "TP-CLI-05 about human Cache folder 2nd fallback" "${_hum}" "Cache folder (2nd fallback):"
+    assert_contains "TP-CLI-05 about human Persistence storage" "${_hum}" "Persistence storage:"
+    assert_not_contains "TP-CLI-05 no Storage (effective) label" "${_hum}" "Storage (effective)"
+    assert_not_contains "TP-CLI-05 no Storage (fallback) label" "${_hum}" "Storage (fallback)"
+    assert_not_contains "TP-CLI-05 no Cache folder (chosen)" "${_hum}" "Cache folder (chosen)"
+    assert_contains "TP-CLI-05 about human preferred path" "${_hum}" "/dev/shm/cache/cache-${APP_NAME}-${_login}-"
+    assert_contains "TP-CLI-05 about human 2nd path" "${_hum}" "/.cache/cache-${APP_NAME}-"
+    assert_contains "TP-CLI-05 about human persistence path" "${_hum}" "${CI_HOME}/.local/countdown"
     if [ -n "${_eff}" ]; then
-        _mode=$(ls -ld "${_eff}" 2>/dev/null || true)
-        case "${_mode}" in
-            drwx------*) t_pass "TP-STORAGE-04 cache leaf mode 700 (${_eff})" ;;
-            *) t_fail "TP-STORAGE-04 cache leaf not private (${_mode})" ;;
-        esac
+        assert_contains "TP-CLI-05 about human used path" "${_hum}" "Cache folder used:"
     fi
-
-    _out=$(HOME="${CI_HOME}" XDG_CACHE_HOME="${CI_HOME}/.cache" sh "${SCRIPT}" about 2>/dev/null)
-    assert_contains "TP-CLI-05 about human Cache folder (preferred)" "$_out" "Cache folder (preferred)"
-    assert_contains "TP-CLI-05 about human Cache folder (fallback)" "$_out" "Cache folder (fallback)"
-    assert_contains "TP-CLI-05 about human Cache folder (chosen)" "$_out" "Cache folder (chosen)"
-    assert_contains "TP-CLI-05 about human Persistence storage" "$_out" "Persistence storage"
-    assert_contains "TP-CLI-05 about human preferred path" "$_out" "${_pref}"
-    assert_contains "TP-CLI-05 about human persistence path" "$_out" "${CI_HOME}/.local/countdown"
-    if [ -n "${_eff}" ]; then
-        assert_contains "TP-CLI-05 about human chosen path" "$_out" "${_eff}"
-    fi
-    if [ -d "${CI_HOME}/.local/countdown" ]; then
+    _hum_gb=$(HOME="${CI_HOME}" COUNTDOWN_CACHE_HOST=gitbash sh "${SCRIPT}" about 2>/dev/null)
+    assert_contains "TP-CLI-05 gitbash about 1st" "${_hum_gb}" "AppData/Local/Temp/cache-${APP_NAME}-"
+    assert_not_contains "TP-CLI-05 gitbash about omits 2nd" "${_hum_gb}" "Cache folder (2nd fallback)"
+    _hum_mac=$(HOME="${CI_HOME}" COUNTDOWN_CACHE_HOST=mac sh "${SCRIPT}" about 2>/dev/null)
+    assert_contains "TP-CLI-05 mac about 1st" "${_hum_mac}" "Library/Caches/cache-${APP_NAME}-"
+    assert_contains "TP-CLI-05 mac about 2nd path" "${_hum_mac}" "Cache folder (2nd fallback): ${CI_HOME}/cache/cache-${APP_NAME}-"
+    _persist=$(printf '%s' "$_out" | sed -n 's/.*"persistence_storage":"\([^"]*\)".*/\1/p' | head -n1)
+    assert_eq "TP-CLI-05 persistence_storage path" "${CI_HOME}/.local/${APP_NAME}" "${_persist}"
+    if [ -n "${_persist}" ] && [ -d "${_persist}" ]; then
         t_pass "TP-CLI-05 persistence folder created"
     else
         t_fail "TP-CLI-05 persistence folder missing (${CI_HOME}/.local/countdown)"
     fi
+    case "${_persist}" in
+        */.local/bin|*/.local/bin/) t_fail "TP-CLI-05 persistence must not be USER_BIN: '${_persist}'" ;;
+        *) t_pass "TP-CLI-05 persistence is not the install bin directory" ;;
+    esac
     _pmode=$(ls -ld "${CI_HOME}/.local/countdown" 2>/dev/null || true)
     case "${_pmode}" in
         drwx------*) t_pass "TP-STORAGE-04 persistence folder mode 700" ;;

@@ -44,9 +44,9 @@ set -u  # Treat unset variables as error (defensive)
 : "${APP_DESC:=Lightweight per-user named countdown timers (volatile or persistent)}"
 : "${SHORT_DESCRIPTION:=${APP_DESC}}"
 : "${DESCRIPTION:=POSIX /bin/sh CLI you run as yourself. Start named remaining-time countdowns (start/stop/status/list/kill/reset). Also install, about, version-check, self-update, self-uninstall. No command means install or re-check install.}"
-# Product version SSOT (specialized 1.1.6: private cache leaf + prompt_ask cup). Extractors use: grep '^VERSION="'
-VERSION="1.1.6"
-: "${VERSION:=1.1.6}"
+# Product version SSOT (specialized 1.1.7: per-process cache leaf). Extractors use: grep '^VERSION="'
+VERSION="1.1.7"
+: "${VERSION:=1.1.7}"
 
 # Runtime flags (safe defaults)
 : "${QUIET:=0}"
@@ -1989,23 +1989,24 @@ util_backup() {
 # Type 0 storage: cache folder AND persistence folder
 # =============================================================================
 #
-# GENERAL PURPOSE:
-# Isolated scratch/cache root plus durable per-user persistence.
-# Cache leaf is private to this login (mode 700):
-#   /dev/shm/cache/cache-${APP_NAME}-${USERNAME}
-#   → /tmp/cache/cache-${APP_NAME}-${USERNAME}
-#   → ${XDG_CACHE_HOME}/cache-${APP_NAME}.
-# Parents …/cache/ are mode 1777 so each login can add its own leaf.
-# Persistence is ${HOME}/.local/${APP_NAME} mode 700.
-# Path printf is a data return for $(…) capture, not a product message.
+# Linux:  /dev/shm/cache/cache-${APP_NAME}-${login}-$$
+#          then /tmp/cache/cache-${APP_NAME}-${login}-$$
+#          then ${HOME}/.cache/cache-${APP_NAME}-$$
+# Git Bash: /tmp/cache/cache-${APP_NAME}-${login}-$$
+#          then ${HOME}/AppData/Local/Temp/cache-${APP_NAME}-$$
+# Mac:    /tmp/cache/cache-${APP_NAME}-${login}-$$
+#          then ${HOME}/Library/Caches/cache-${APP_NAME}-$$
+#          then ${HOME}/cache/cache-${APP_NAME}-$$
+# $$ is this process id. Home tiers omit the login (HOME already isolates).
+# A missed tier is silent. Leaf mode 700. Parents …/cache/ prefer mode 1777.
+# Persistence is ${HOME}/.local/${APP_NAME} mode 700 (no login suffix, no $$).
+# MUST NOT use /dev/shm/${APP_NAME} or /dev/shm/${APP_NAME}-${USERNAME}.
 #
 # CIAO PRINCIPLES APPLIED:
 # - Caution: Never assume /dev/shm, /tmp, or HOME exist or are writable.
 # - Intentional: Storage = cache folder AND persistence folder (about says both).
-# - Anti-fragile: Fall through when a cache leaf is not owned by this login.
-# - Over-protect: Do not use /dev/shm/${APP_NAME} or /dev/shm/${APP_NAME}-${USERNAME}
-#   as the cache folder (that tree is domain volatile). Do not use
-#   ${HOME}/.local/bin as persistence. Do not keep a group-writable shared leaf.
+# - Anti-fragile: Fall through when a cache leaf cannot be claimed. No warning.
+# - Over-protect: Reject a symlink or a leaf this uid cannot chmod 700.
 #
 # ALIGNMENT (live requirements only):
 # - requirement-shell-cli-storage.md
@@ -2015,30 +2016,106 @@ util_backup() {
 # Rewriting to a shared world-writable dump, or dropping persistence, is forbidden.
 #
 # PRINTF EXCEPTION (class B – function return-via-stdout):
-# echo/printf of paths is a data return for $(…) capture, not a product message.
+# printf of paths is a data return for $(…) capture, not a product message.
 # Failures use out_die. See requirement-shell-output-requirements.md §2.1.1.
+#
+# Test-purpose: COUNTDOWN_CACHE_HOST=linux|gitbash|mac
+#               COUNTDOWN_CACHE_SKIP=preferred skips tier 1 with no message
 #
 # Lessons Learned (CIAO Reflection):
 # 2026-07-13: STORAGE_DIR was bare/unset on third fallback (INC-20260713-001 P1).
-# 2026-07-14: Third fallback used XDG_CACHE_HOME with per-user isolation.
 # 2026-08-30: Cache leaf is cache-${APP_NAME} under …/cache/; persistence is
 #             ${HOME}/.local/${APP_NAME} (not cache, not bin).
 # 2026-09-23: Cache leaf is per-login mode 700 (L-14). Shared writable leaf rejected.
+# 2026-09-27: Leaf is cache-${APP_NAME}-${login}-$$ so logins do not share one
+#             directory. Home tiers omit login. Tier misses stay silent.
 #
-# Last updated: 2026-09-23
+# Last updated: 2026-09-27
 # =============================================================================
+
+util_cache_host_kind() {
+    case "${COUNTDOWN_CACHE_HOST:-}" in
+        linux|gitbash|mac)
+            printf '%s' "${COUNTDOWN_CACHE_HOST}"
+            return 0
+            ;;
+    esac
+    if [ -n "${MSYSTEM:-}" ]; then
+        printf '%s' "gitbash"
+        return 0
+    fi
+    case "$(uname -s 2>/dev/null)" in
+        MINGW*|MSYS*) printf '%s' "gitbash" ;;
+        Darwin) printf '%s' "mac" ;;
+        *) printf '%s' "linux" ;;
+    esac
+}
+
+util_cache_login() {
+    _clogin="${USERNAME:-unknown}"
+    case "${_clogin}" in
+        *[!A-Za-z0-9._-]*)
+            _clogin=$(printf '%s' "${_clogin}" | tr -c 'A-Za-z0-9._-' '_')
+            ;;
+    esac
+    [ -n "${_clogin}" ] || _clogin="unknown"
+    printf '%s' "${_clogin}"
+    unset _clogin
+}
+
+util_cache_volatile_leaf() {
+    : "${APP_NAME:=countdown}"
+    printf '%s' "cache-${APP_NAME}-$(util_cache_login)-$$"
+}
+
+util_cache_home_leaf() {
+    : "${APP_NAME:=countdown}"
+    printf '%s' "cache-${APP_NAME}-$$"
+}
 
 util_preferred_cache_dir() {
     : "${APP_NAME:=countdown}"
-    : "${USERNAME:=unknown}"
-    printf '%s' "/dev/shm/cache/cache-${APP_NAME}-${USERNAME}"
+    : "${HOME:=/tmp}"
+    case "$(util_cache_host_kind)" in
+        gitbash|mac)
+            printf '%s' "/tmp/cache/$(util_cache_volatile_leaf)"
+            ;;
+        *)
+            printf '%s' "/dev/shm/cache/$(util_cache_volatile_leaf)"
+            ;;
+    esac
 }
 
 util_fallback_cache_dir() {
     : "${APP_NAME:=countdown}"
     : "${HOME:=/tmp}"
-    : "${XDG_CACHE_HOME:=${HOME}/.cache}"
-    printf '%s' "${XDG_CACHE_HOME}/cache-${APP_NAME}"
+    case "$(util_cache_host_kind)" in
+        gitbash)
+            printf '%s' "${HOME}/AppData/Local/Temp/$(util_cache_home_leaf)"
+            ;;
+        mac)
+            printf '%s' "${HOME}/Library/Caches/$(util_cache_home_leaf)"
+            ;;
+        *)
+            printf '%s' "/tmp/cache/$(util_cache_volatile_leaf)"
+            ;;
+    esac
+}
+
+util_fallback2_cache_dir() {
+    : "${APP_NAME:=countdown}"
+    : "${HOME:=/tmp}"
+    case "$(util_cache_host_kind)" in
+        gitbash)
+            printf '%s' ""
+            ;;
+        mac)
+            printf '%s' "${HOME}/cache/$(util_cache_home_leaf)"
+            ;;
+        *)
+            printf '%s' "${HOME}/.cache/$(util_cache_home_leaf)"
+            ;;
+    esac
 }
 
 util_persistent_storage_dir() {
@@ -2136,46 +2213,75 @@ util_resolve_persistent_storage() {
     return 0
 }
 
+# Create one cache tier. Silent on failure (caller tries the next tier).
+util_cache_try_dir() {
+    _cdir="${1-}"
+    [ -n "${_cdir}" ] || return 1
+    _cparent=$(dirname "${_cdir}")
+    case "${_cparent}" in
+        /dev/shm/cache|/tmp/cache)
+            if ! util_ensure_cache_parent "${_cparent}"; then
+                unset _cdir _cparent
+                return 1
+            fi
+            ;;
+        *)
+            mkdir -p "${_cparent}" 2>/dev/null || {
+                unset _cdir _cparent
+                return 1
+            }
+            ;;
+    esac
+    if ! util_claim_private_dir "${_cdir}"; then
+        unset _cdir _cparent
+        return 1
+    fi
+    unset _cdir _cparent
+    return 0
+}
+
 util_resolve_storage() {
     : "${APP_NAME:=countdown}"
     : "${HOME:=/tmp}"
     : "${USERNAME:=unknown}"
-    : "${XDG_CACHE_HOME:=${HOME}/.cache}"
-    : "${STORAGE_DIR:=${XDG_CACHE_HOME}/cache-${APP_NAME}}"
 
-    # Previous shared leaf (no login in the name). If this uid owns it, make it private.
-    _legacy="/dev/shm/cache/cache-${APP_NAME}"
-    if [ -d "${_legacy}" ] && [ ! -L "${_legacy}" ]; then
-        chmod 700 "${_legacy}" 2>/dev/null || true
-    fi
+    # Previous shared leaves (no process id). If this uid owns one, make it private.
+    # Do not use them as the live cache.
+    for _legacy in \
+        "/dev/shm/cache/cache-${APP_NAME}" \
+        "/tmp/cache/cache-${APP_NAME}" \
+        "/dev/shm/cache/cache-${APP_NAME}-${USERNAME}" \
+        "/tmp/cache/cache-${APP_NAME}-${USERNAME}"
+    do
+        if [ -d "${_legacy}" ] && [ ! -L "${_legacy}" ]; then
+            chmod 700 "${_legacy}" 2>/dev/null || true
+        fi
+    done
 
     _storage_candidate=""
-    if [ -d "/dev/shm" ] && [ -w "/dev/shm" ]; then
-        if util_ensure_cache_parent "/dev/shm/cache"; then
-            _pref="/dev/shm/cache/cache-${APP_NAME}-${USERNAME}"
-            if util_claim_private_dir "${_pref}"; then
-                _storage_candidate="${_pref}"
-            fi
-        fi
-    fi
-    if [ -z "${_storage_candidate}" ] && [ -w "/tmp" ]; then
-        if util_ensure_cache_parent "/tmp/cache"; then
-            _tmpc="/tmp/cache/cache-${APP_NAME}-${USERNAME}"
-            if util_claim_private_dir "${_tmpc}"; then
-                _storage_candidate="${_tmpc}"
-            fi
+    if [ "${COUNTDOWN_CACHE_SKIP:-}" != "preferred" ]; then
+        _pref=$(util_preferred_cache_dir)
+        if util_cache_try_dir "${_pref}"; then
+            _storage_candidate="${_pref}"
         fi
     fi
     if [ -z "${_storage_candidate}" ]; then
-        _xdg_parent=$(dirname "${STORAGE_DIR}")
-        mkdir -p "${_xdg_parent}" 2>/dev/null || true
-        if ! util_claim_private_dir "${STORAGE_DIR}"; then
-            out_die "Cannot create cache folder ${STORAGE_DIR}. Next: set HOME to a writable directory you own, then rerun."
+        _fb1=$(util_fallback_cache_dir)
+        if util_cache_try_dir "${_fb1}"; then
+            _storage_candidate="${_fb1}"
         fi
-        _storage_candidate="${STORAGE_DIR}"
+    fi
+    if [ -z "${_storage_candidate}" ]; then
+        _fb2=$(util_fallback2_cache_dir)
+        if [ -n "${_fb2}" ] && util_cache_try_dir "${_fb2}"; then
+            _storage_candidate="${_fb2}"
+        fi
+    fi
+    if [ -z "${_storage_candidate}" ]; then
+        out_die "Cannot create cache folder. Next: check that /tmp and HOME are writable directories you own, then rerun."
     fi
     printf '%s\n' "${_storage_candidate}"
-    unset _storage_candidate _pref _tmpc _legacy _xdg_parent
+    unset _storage_candidate _pref _fb1 _fb2 _legacy
     return 0
 }
 
@@ -2833,7 +2939,7 @@ app_about() {
     : "${QUIET:=0}"
     : "${APP_NAME:=countdown}"
     # Version comes from global SSOT (VERSION="1.0.0" near top); default only if unset
-    : "${VERSION:=1.1.6}"
+    : "${VERSION:=1.1.7}"
     : "${GLOBAL_BIN:=/usr/local/bin}"
     : "${USER_BIN:=${HOME}/.local/bin}"
     : "${SCRIPT_URL:=}"
@@ -2863,11 +2969,11 @@ app_about() {
         current_user="$(id -un 2>/dev/null || echo "unknown")"
 
         : "${HOME:=/tmp}"
-        : "${XDG_CACHE_HOME:=${HOME}/.cache}"
         : "${EFFECTIVE_STORAGE_DIR:=$(util_resolve_storage)}"
         : "${PERSISTENT_STORAGE_DIR:=$(util_resolve_persistent_storage)}"
         _cache_pref=$(util_preferred_cache_dir)
         _cache_fb=$(util_fallback_cache_dir)
+        _cache_fb2=$(util_fallback2_cache_dir)
         _persist=$(util_persistent_storage_dir)
 
         out_json "about" "" \
@@ -2879,11 +2985,14 @@ app_about() {
             "shell" "${current_shell}" \
             "interactive" "${interactive}" \
             "user" "${current_user}" \
+            "cache_used" "${EFFECTIVE_STORAGE_DIR}" \
             "cache_preferred" "${_cache_pref}" \
             "cache_fallback" "${_cache_fb}" \
+            "cache_fallback_2" "${_cache_fb2}" \
             "persistence_storage" "${_persist}" \
-            "effective_storage" "${EFFECTIVE_STORAGE_DIR}"
-        unset _cache_pref _cache_fb _persist
+            "effective_storage" "${EFFECTIVE_STORAGE_DIR}" \
+            "storage_dir" "${_cache_fb}"
+        unset _cache_pref _cache_fb _cache_fb2 _persist
         return 0
     fi
 
@@ -2925,13 +3034,19 @@ app_about() {
     out_empty_line
 
     : "${HOME:=/tmp}"
-    : "${XDG_CACHE_HOME:=${HOME}/.cache}"
     : "${EFFECTIVE_STORAGE_DIR:=$(util_resolve_storage)}"
     : "${PERSISTENT_STORAGE_DIR:=$(util_resolve_persistent_storage)}"
-    out_info "Cache folder (preferred): $(util_preferred_cache_dir)"
-    out_info "Cache folder (fallback):  $(util_fallback_cache_dir)"
-    out_info "Cache folder (chosen):    ${EFFECTIVE_STORAGE_DIR}"
-    out_info "Persistence storage:      $(util_persistent_storage_dir)"
+    _cache_pref=$(util_preferred_cache_dir)
+    _cache_fb=$(util_fallback_cache_dir)
+    _cache_fb2=$(util_fallback2_cache_dir)
+    out_info "Cache folder used: ${EFFECTIVE_STORAGE_DIR}"
+    out_info "Cache folder (preferred): ${_cache_pref}"
+    out_info "Cache folder (1st fallback): ${_cache_fb}"
+    if [ -n "${_cache_fb2}" ]; then
+        out_info "Cache folder (2nd fallback): ${_cache_fb2}"
+    fi
+    out_info "Persistence storage: $(util_persistent_storage_dir)"
+    unset _cache_pref _cache_fb _cache_fb2
 
     out_empty_line
 
@@ -2979,7 +3094,7 @@ app_about() {
 
 app_version() {
     : "${APP_NAME:=countdown}"
-    : "${VERSION:=1.1.6}"
+    : "${VERSION:=1.1.7}"
     : "${JSON:=0}"
     if [ "${JSON}" -eq 1 ]; then
         # Same machine contract as historical app_main inline path
@@ -3138,13 +3253,13 @@ app_main() {
     : "${FORCE_REINSTALL:=0}"
     : "${HOME:=/tmp}"
     : "${APP_NAME:=countdown}"
-    : "${XDG_CACHE_HOME:=${HOME}/.cache}"
 
     # Type 0 storage wire: cache folder AND persistence folder
-    # (requirement-shell-cli-storage.md). TMPDIR inherits cache isolation.
+    # (requirement-shell-cli-storage.md). TMPDIR is the chosen cache leaf.
+    # STORAGE_DIR is the 1st fallback path (about JSON storage_dir).
     EFFECTIVE_STORAGE_DIR=$(util_resolve_storage)
+    STORAGE_DIR=$(util_fallback_cache_dir)
     PERSISTENT_STORAGE_DIR=$(util_resolve_persistent_storage)
-    STORAGE_DIR="${EFFECTIVE_STORAGE_DIR}"
     TMPDIR="${EFFECTIVE_STORAGE_DIR}"
     export EFFECTIVE_STORAGE_DIR PERSISTENT_STORAGE_DIR STORAGE_DIR TMPDIR
 

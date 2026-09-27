@@ -53,7 +53,7 @@ Living checklist for product and bootstrap-origin reviews.
 - [ ] Companion fetch: curl `%{http_code}` and wget not limited to `HTTP/1.1 200` only  
 - [ ] CHECKSUM mismatch fail-closed; missing sidecar policy honest  
 - [ ] Non-interactive self-uninstall without `--force` does not fake success
-- [ ] Type 0 cache leaf is mode `700` and owned by this uid (`util_resolve_storage`); writable-only under `/dev/shm/cache` is not enough (L-14)
+- [ ] Type 0 cache leaf is mode `700` and owned by this uid (`util_resolve_storage`); volatile name is `cache-${APP_NAME}-${login}-$$`; a skipped tier is silent (L-14)
 - [ ] `prompt_ask` sets `PROMPT_ASK_VALUE` in the current shell; no `$()` around a function that `read`s (L-15)  
 
 ---

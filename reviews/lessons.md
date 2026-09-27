@@ -22,7 +22,7 @@ Agents doing any product or origin review **MUST** re-check these points even if
 | L-04 | Uninstall PATH cleanup must **not** `sed` delete every line matching `.local/bin` | Over-broad cleanup “helps” empty USER_BIN but wrecks cargo/pipx/nvm | `inst_self_uninstall_cleanup_path` |
 | L-05 | **`rm` failure is not success** for stop/kill/reset | Ignoring `rm` status looks green while state remains | domain stop/kill |
 | L-06 | **`util_json_escape` must handle controls** (`\n` `\r` `\t` at minimum); name policy must not allow raw newlines | Escaping only `\` `"` is a common incomplete helper | escape helper + sanitize name |
-| L-14 | Type 0 **cache leaf** must be private to this login (mode `700`). A mode `1777` parent plus “is writable?” accepts a group-writable or planted leaf, and `TMPDIR` follows it | Shared app leaf looks isolated; umask `002` yields mode `775`. **Closed in 1.1.6** | `util_claim_private_dir`; TP-STORAGE-04/05 |
+| L-14 | Type 0 **cache leaf** must be private to this login (mode `700`). A mode `1777` parent plus “is writable?” accepts a group-writable or planted leaf, and `TMPDIR` follows it. **1.1.7** names the volatile leaf `cache-${APP_NAME}-${login}-$$` (home leaf omits the login) and skips a missing tier in silence | Shared app leaf looks isolated; umask `002` yields mode `775`. **Closed in 1.1.6**; path shape tightened in **1.1.7** | `util_claim_private_dir`; TP-CLI-05; TP-STORAGE-04/05 |
 | L-15 | A helper that `read`s is called in **this** shell. Value prompts assign **`PROMPT_ASK_VALUE`**. `$()` is for pure-data helpers only | Class-B “callers must capture” reteaches the anti-pattern. **Closed in 1.1.6** | `prompt_ask` + TP-CLI-13 |
 
 ---

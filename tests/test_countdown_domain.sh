@@ -197,17 +197,19 @@ else:
         t_fail "TP-STORAGE-02 persist state missing under ${CI_HOME}/.local/${APP_NAME}"
     fi
     _cache_hit=0
-    for _c in \
-        "/dev/shm/cache/cache-${APP_NAME}-${_u}" \
-        "/tmp/cache/cache-${APP_NAME}-${_u}" \
-        "${CI_HOME}/.cache/cache-${APP_NAME}" \
-        "${CI_HOME}/.cache/${APP_NAME}"
+    _persist_base="${APP_NAME}_${_u}_persist-t"
+    for _root in /dev/shm/cache /tmp/cache "${CI_HOME}/.cache" \
+        "${CI_HOME}/Library/Caches" "${CI_HOME}/cache" "${CI_HOME}/AppData/Local/Temp"
     do
-        if [ -e "${_c}/${APP_NAME}_${_u}_persist-t" ]; then
+        if [ -d "${_root}" ] && find "${_root}" -name "${_persist_base}" -print 2>/dev/null | grep -q .; then
             _cache_hit=1
-            t_fail "TP-STORAGE-05 persist state under cache folder ${_c}"
+            t_fail "TP-STORAGE-05 persist state under cache tree ${_root}"
         fi
     done
+    if [ -e "${CI_HOME}/.cache/${APP_NAME}/${_persist_base}" ]; then
+        _cache_hit=1
+        t_fail "TP-STORAGE-05 persist state under ${CI_HOME}/.cache/${APP_NAME}"
+    fi
     if [ "${_cache_hit}" -eq 0 ]; then
         t_pass "TP-STORAGE-05 persist state is not under a cache folder"
     fi

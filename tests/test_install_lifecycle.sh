@@ -168,10 +168,10 @@ run_test_install_lifecycle() {
 
     # --- TP-LC-05b: self-update when remote is newer ---
     _newer_ver="9.9.9"
-    _channel_bin="${CI_CHANNEL_DIR}/countdown"
+    _channel_bin="${CI_CHANNEL_DIR}/${CI_CHANNEL_REL}"
     # shellcheck disable=SC2016
     sed "s/^VERSION=\"${APP_VERSION}\"/VERSION=\"${_newer_ver}\"/" "${SCRIPT}" > "${_channel_bin}"
-    printf '%s\n' "$(sha256sum "${_channel_bin}" | awk '{print $1}')" > "${CI_CHANNEL_DIR}/countdown.sha256"
+    printf '%s\n' "$(sha256sum "${_channel_bin}" | awk '{print $1}')" > "${CI_CHANNEL_DIR}/${CI_CHANNEL_REL}.sha256"
     _out=$(
         HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" SCRIPT_URL="${CI_SCRIPT_URL}" \
         PATH="${CI_USER_BIN}:${PATH}" \
@@ -184,7 +184,7 @@ run_test_install_lifecycle() {
     assert_eq "TP-LC-05b local version after upgrade" "${_newer_ver}" "$_loc"
     # restore channel to product bytes for remaining tests
     cp "${SCRIPT}" "${_channel_bin}"
-    printf '%s\n' "$(sha256sum "${_channel_bin}" | awk '{print $1}')" > "${CI_CHANNEL_DIR}/countdown.sha256"
+    printf '%s\n' "$(sha256sum "${_channel_bin}" | awk '{print $1}')" > "${CI_CHANNEL_DIR}/${CI_CHANNEL_REL}.sha256"
     # reinstall product version as local baseline for transparency/downgrade
     HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" SCRIPT_URL="${CI_SCRIPT_URL}" \
         sh "${SCRIPT}" --json --force install >/dev/null 2>&1 || true
@@ -268,10 +268,10 @@ run_test_install_lifecycle() {
     assert_file_exists "TP-CSUM-04 install with good CHECKSUM" "${_app_bin}"
 
     # --- TP-LC-08: downgrade refuse without --force; allow with --force ---
-    _older="${CI_CHANNEL_DIR}/countdown"
+    _older="${CI_CHANNEL_DIR}/${CI_CHANNEL_REL}"
     # shellcheck disable=SC2016
     sed "s/^VERSION=\"${APP_VERSION}\"/VERSION=\"0.9.0\"/" "${SCRIPT}" > "${_older}"
-    printf '%s\n' "$(sha256sum "${_older}" | awk '{print $1}')" > "${CI_CHANNEL_DIR}/countdown.sha256"
+    printf '%s\n' "$(sha256sum "${_older}" | awk '{print $1}')" > "${CI_CHANNEL_DIR}/${CI_CHANNEL_REL}.sha256"
     assert_file_exists "TP-LC-08 local binary present for downgrade tests" "${_app_bin}"
 
     _out=$(

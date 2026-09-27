@@ -10,6 +10,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [1.1.8] - 2026-09-27
+
+### Changed
+- The installable file is `src/countdown`, with companion `src/countdown.sha256` beside it
+- The curl install link is `https://raw.githubusercontent.com/Wilgat/countdown/main/src/countdown`
+- `SCRIPT_URL` is composed from `REPO_USER`, `REPO_NAME`, and `SCRIPT_RELPATH` (default `src/${APP_NAME}`)
+- `help` lists `SCRIPT_RELPATH`
+
+### Fixed
+- The README advanced `CHECKSUM` example matches the published companion again
+
+### Security
+- Regenerated `src/countdown.sha256` for **1.1.8**
+
+---
+
 ## [1.1.7] - 2026-09-27
 
 ### Changed

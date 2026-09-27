@@ -25,12 +25,12 @@ This requirement is the **project Single Source of Truth** for the **bootstrap c
 
 | Surface | What you open | What for |
 |---------|---------------|----------|
-| `./countdown` | leaf program | specialized product |
+| `src/countdown` | leaf program | specialized product |
 | this file | hop table | who is parent vs leaf |
 
 | You do… | What it means | What you type |
 |---------|---------------|---------------|
-| Fix a shared install bug | Fix it on the parent hop, then re-specialize countdown. Do not overwrite the parent with countdown. | keep `./countdown` as the leaf |
+| Fix a shared install bug | Fix it on the parent hop, then re-specialize countdown. Do not overwrite the parent with countdown. | keep `src/countdown` as the leaf |
 
 ---
 
@@ -102,7 +102,7 @@ When a leaf revision report is used to audit an ancestor, each finding **MUST** 
 |---|----------|----------|----------------|--------------------|---------|-------|
 | 0 | selfmanaged | root | External / sibling product (not required in this repo); Type 0 baseline origin | selfmanaged product channel when present | no / Type 0 only | Architecture parent of timer |
 | 1 | timer | intermediate + **immediate origin** of countdown | `./timer` (reference ship unit in this workspace when present) | timer product channel when published | yes — count-up named timers | Bootstrap used to specialize countdown |
-| 2 | countdown | **leaf** (this product) | `./countdown` | `REPO_USER` / `REPO_NAME` / `SCRIPT_URL` Config SSOT for countdown; companion `./countdown.sha256` | yes — remaining-time countdowns | Product under this requirements registry |
+| 2 | countdown | **leaf** (this product) | `src/countdown` | `REPO_USER` / `REPO_NAME` / `SCRIPT_URL` Config SSOT for countdown; companion `src/countdown.sha256` | yes — remaining-time countdowns | Product under this requirements registry |
 
 **Chain diagram:**
 
@@ -130,15 +130,15 @@ countdown (leaf)
 | Default hop for “review bootstrap origin” after a countdown revision report | **Immediate** = `timer` (`./timer` when on disk) |
 | Optional second hop | Root = selfmanaged (when available as sibling/external ship unit) |
 | Shared install/lifecycle/output/integrity defects | Prefer fix on responsible ancestor; then re-specialize timer→countdown if the leaf must absorb the fix |
-| Countdown domain defects | Fix `./countdown` only |
+| Countdown domain defects | Fix `src/countdown` only |
 
 ### 3.4 Product paths (disk-truth)
 
 | Artifact | Path |
 |----------|------|
-| Leaf ship unit | `./countdown` |
+| Leaf ship unit | `src/countdown` |
 | Immediate origin ship unit (when present) | `./timer` |
-| Leaf companion digest | `./countdown.sha256` |
+| Leaf companion digest | `src/countdown.sha256` |
 | Leaf tests | `tests/` |
 | This requirement | `docs/requirements/requirement-bootstrap-chain.md` |
 
@@ -166,14 +166,14 @@ countdown (leaf)
 
 **Future AI assistants, Grok, or maintainers MUST NOT**:
 
-1. Reverse-copy `./countdown` (or any leaf body) onto `./timer`, selfmanaged, or any ancestor path.  
+1. Reverse-copy `src/countdown` (or any leaf body) onto `./timer`, selfmanaged, or any ancestor path.  
 2. Claim timer or selfmanaged was “created by trimming countdown.”  
 3. Leave the hop table empty while claiming multi-hop bootstrap specialization.  
 4. Silently use timer’s or selfmanaged’s install channel as countdown’s channel.  
 5. Push countdown domain (remaining-time timers, duration start, etc.) into ancestor ship units as “shared cleanup.”  
 6. Treat git log alone as a substitute for the hop table.  
 7. Weaken direction or reverse-copy rules without explicit project approval.  
-8. Cite harness template/skill/terminology paths as product-source law authority in `./countdown` comments (cite this and other live `requirement-*.md` only).
+8. Cite harness template/skill/terminology paths as product-source law authority in `src/countdown` comments (cite this and other live `requirement-*.md` only).
 
 **Violating this rule is a critical bootstrap-direction / pollution regression.**
 
@@ -206,7 +206,7 @@ A change that touches parentage, ship-unit bootstrap claims, or shared Type 0 su
 | `docs/requirements/requirement-shell-idempotency.md` | Inherited ensure re-run safety |
 | `docs/requirements/requirement-shell-interactive-vs-noninteractive.md` | Inherited mode behavior |
 | `docs/requirements/index.md` | Registry SSOT |
-| `./countdown` | Leaf ship unit |
+| `src/countdown` | Leaf ship unit |
 | `./timer` | Immediate origin ship unit when present in workspace |
 
 ---

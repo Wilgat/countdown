@@ -25,7 +25,7 @@ It defines a **Type 0–centric self-managed shell CLI** (install / update / uni
 
 | Surface | What you open | What for |
 |---------|---------------|----------|
-| `./countdown` | program file people install | dispatcher |
+| `src/countdown` | program file people install | dispatcher |
 | `countdown help` | command | listed verbs |
 
 | You do… | What it means | What you type |
@@ -102,12 +102,12 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 | Item | Value for countdown |
 |------|------------------------|
 | **Product / binary name** | `countdown` (`APP_NAME`, default `countdown`) |
-| **Primary executable** | Repo root `./countdown` (POSIX `/bin/sh`, single-file for `curl \| sh`) |
+| **Primary executable** | `src/countdown` (POSIX `/bin/sh`, single-file for `curl \| sh`) |
 | **Dispatcher** | `app_main` (always invoked at end of script: `app_main "$@"` — no `${0##*/}` / APP_NAME basename gate; required for `curl \| sh`) |
 | **Output SSOT** | `out_text` + wrappers (`out_info`, `out_success`, `out_warn`, `out_error`, `out_die`, `out_plain`, `out_json`, …) |
-| **Version SSOT** | `VERSION` in script config block (product SSOT; currently `VERSION="1.1.7"`) |
+| **Version SSOT** | `VERSION` in script config block (product SSOT; currently `VERSION="1.1.8"`) |
 | **Install paths** | Global: `GLOBAL_BIN` default `/usr/local/bin`; User: `USER_BIN` default `${HOME}/.local/bin` |
-| **Remote channel env (help surface)** | `REPO_USER` / `REPO_NAME` (defaults `Wilgat` / `countdown`); `SCRIPT_URL` composed default `https://raw.githubusercontent.com/${REPO_USER}/${REPO_NAME}/main/${APP_NAME}` (literal product default: `https://raw.githubusercontent.com/Wilgat/countdown/main/countdown`; override via env). **`help` / `about` MUST list these operator channel vars as designed — MUST NOT list `CHECKSUM`** (install-path runtime pin only; see `requirement-shell-automatic-checksum.md`) |
+| **Remote channel env (help surface)** | `REPO_USER` / `REPO_NAME` / `SCRIPT_RELPATH` (defaults `Wilgat` / `countdown` / `src/countdown`); `SCRIPT_URL` composed default `https://raw.githubusercontent.com/${REPO_USER}/${REPO_NAME}/main/${SCRIPT_RELPATH}` (literal product default: `https://raw.githubusercontent.com/Wilgat/countdown/main/src/countdown`; override via env). **`help` MUST list `REPO_USER`, `REPO_NAME`, `SCRIPT_RELPATH`, and `SCRIPT_URL`, and MUST NOT list `CHECKSUM`. `about` MUST NOT list `CHECKSUM`** (install-path runtime pin only; see `requirement-shell-automatic-checksum.md`) |
 | **Type 1 / Type 2 commands** | **None** on current surface — this tool is CLI lifecycle only |
 | **Dedicated system user** | **Not required** for Type 0 CLI self-management |
 
@@ -242,7 +242,7 @@ This requirement is satisfied for the countdown shell CLI when all of the follow
 | `docs/requirements/requirement-domain-countdown.md` | Domain verb topic-owner (dual mention) |
 | `docs/requirements/requirement-shell-script-coding.md` | POSIX coding specialize-in home |
 | `docs/requirements/index.md` | Registry SSOT |
-| `./countdown` | Implementation under test |
+| `src/countdown` | Implementation under test |
 
 ---
 

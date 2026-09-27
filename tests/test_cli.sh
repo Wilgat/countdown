@@ -21,12 +21,13 @@ run_test_cli() {
     _syn=$?
     assert_eq "TP-CLI-01 sh -n countdown (syntax)" 0 "$_syn"
 
-    if [ -f "${REPO_ROOT}/countdown.sha256" ]; then
-        _expected=$(awk '{print $1; exit}' "${REPO_ROOT}/countdown.sha256")
+    _digest="${REPO_ROOT}/src/${APP_NAME}.sha256"
+    if [ -f "${_digest}" ]; then
+        _expected=$(awk '{print $1; exit}' "${_digest}")
         _actual=$(sha256sum "${SCRIPT}" | awk '{print $1}')
-        assert_eq "TP-CLI-01 TP-CSUM-01 countdown.sha256 matches ./countdown" "$_expected" "$_actual"
+        assert_eq "TP-CLI-01 TP-CSUM-01 src/countdown.sha256 matches src/countdown" "$_expected" "$_actual"
     else
-        t_fail "TP-CLI-01 TP-CSUM-01 countdown.sha256 missing at repo root"
+        t_fail "TP-CLI-01 TP-CSUM-01 src/countdown.sha256 missing beside src/countdown"
     fi
 
     # --- TP-CLI-02: version human + JSON ---
@@ -68,7 +69,18 @@ run_test_cli() {
     assert_contains "TP-CLI-03 help lists REPO_USER" "$_out" "REPO_USER"
     assert_contains "TP-CLI-03 help lists REPO_NAME" "$_out" "REPO_NAME"
     assert_contains "TP-CLI-03 help lists SCRIPT_URL" "$_out" "SCRIPT_URL"
+    assert_contains "TP-CLI-03 help lists SCRIPT_RELPATH" "$_out" "SCRIPT_RELPATH"
     assert_not_contains "TP-CLI-03 TP-CSUM-05 help must not list CHECKSUM" "$_out" "CHECKSUM"
+    _assign=$(grep '^: "${SCRIPT_URL:=' "${SCRIPT}" 2>/dev/null | head -1 || true)
+    assert_contains "TP-CLI-03 SCRIPT_URL composes SCRIPT_RELPATH" "$_assign" 'main/${SCRIPT_RELPATH}'
+    _rel=$(grep '^: "${SCRIPT_RELPATH:=' "${SCRIPT}" 2>/dev/null | head -1 || true)
+    assert_contains "TP-CLI-03 SCRIPT_RELPATH default is src/APP_NAME" "$_rel" 'src/${APP_NAME}'
+    _channel=$(
+        SCRIPT_URL= SCRIPT_RELPATH= REPO_USER= REPO_NAME= \
+        sh "${SCRIPT}" help 2>/dev/null
+    )
+    assert_contains "TP-CLI-03 help default channel is src/countdown" "$_channel" \
+        "https://raw.githubusercontent.com/Wilgat/countdown/main/src/countdown"
 
     # --- TP-CLI-04: help/about JSON purity ---
     _out=$(sh "${SCRIPT}" --json help 2>/dev/null)

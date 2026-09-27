@@ -11,28 +11,28 @@ This requirement is the **specialize-in home** for POSIX `/bin/sh` coding on cou
 
 It owns ship-unit coding rules that are **not** already owned by a peer: shebang, POSIX subset, quoting, safe defaults, function headers, Protection Zones, and product-source citation. Peers keep full tables for output, prefixes, TTY/prompts, storage, and install.
 
-**Scope:** How `./countdown` is written and changed.  
+**Scope:** How `src/countdown` is written and changed.  
 **Out of scope (point, do not duplicate):** `out_*` catalog (`requirement-shell-output-requirements`); prefix table (`requirement-shell-modular-function-design`); TTY/prompt contracts (`requirement-shell-interactive-vs-noninteractive`); cache/persistence resolvers (`requirement-shell-cli-storage`); command catalog (`requirement-shell-cli-interface`).
 
 ### 1.1 Human-facing
 
-**In one sentence:** Maintainers write `./countdown` as one POSIX `/bin/sh` file you can install and run as yourself, with prefixes and Protection Zones that stop careless “cleanup.”
+**In one sentence:** Maintainers write `src/countdown` as one POSIX `/bin/sh` file you can install and run as yourself, with prefixes and Protection Zones that stop careless “cleanup.”
 
 | You | The other role | Not this |
 |-----|----------------|----------|
-| A maintainer editing `./countdown` | Operators who only run commands | A second output or command-table SSOT |
+| A maintainer editing `src/countdown` | Operators who only run commands | A second output or command-table SSOT |
 
 **Includes:** `#!/bin/sh`, quoted variables, `: "${VAR:=default}"` at function top, CIAO function headers, live `requirement-*.md` cites in product comments.  
 **Excludes:** treating coding skills as product law; dumping the full `out_*` or prefix tables here; wrapping `sudo` (this product does not).
 
 | Surface | What you open | What for |
 |---------|---------------|----------|
-| `./countdown` | program file people install | live coding |
+| `src/countdown` | program file people install | live coding |
 | `countdown help` | command | listed verbs stay aligned with code |
 
 | You do… | What it means | What you type |
 |---------|---------------|---------------|
-| Change a helper | Keep the prefix, header, and safe defaults. Do not replace `out_*` with raw `echo`. | edit `./countdown`; then `./tests/run.sh` |
+| Change a helper | Keep the prefix, header, and safe defaults. Do not replace `out_*` with raw `echo`. | edit `src/countdown`; then `./tests/run.sh` |
 
 ---
 
@@ -72,7 +72,7 @@ It owns ship-unit coding rules that are **not** already owned by a peer: shebang
 
 | Item | Value |
 |------|--------|
-| **Product / ship unit** | `./countdown` |
+| **Product / ship unit** | `src/countdown` |
 | **Language** | POSIX `/bin/sh` |
 | **Domain prefix** | `countdown_*` |
 | **In-tool sudo** | **none** |
@@ -137,7 +137,7 @@ When `countdown` runs on Termux, Git Bash, Windows cmd, or the same class (this 
 | `docs/requirements/requirement-shell-output-requirements.md` | `out_*` |
 | `docs/requirements/requirement-shell-interactive-vs-noninteractive.md` | TTY / prompts |
 | `docs/requirements/requirement-shell-cli-storage.md` | Cache + persistence |
-| `./countdown` | Implementation |
+| `src/countdown` | Implementation |
 
 ---
 

@@ -4,7 +4,8 @@
 
 | Version | Supported |
 |---------|-----------|
-| 1.1.7 (current) | Yes |
+| 1.1.8 (current) | Yes |
+| 1.1.7 | Best-effort; please upgrade when possible |
 | 1.1.6 | Best-effort; please upgrade when possible |
 | 1.1.5 | Best-effort; please upgrade when possible |
 | 1.1.4 | Best-effort; please upgrade when possible |
@@ -54,7 +55,7 @@ This section describes **design posture**. It is **not** a claim of third-party 
 | **Trust bound** | Same-channel SHA-256 proves **byte consistency** (wrong blob / bit-flip / stale companion vs artifact). It is **not** independent authenticity (signing / separate trust root) by itself. |
 | **Forbidden pattern** | Embedding the expected digest of the installable file **inside** that same file as “self-verify.” |
 
-In-repo companion file: [`countdown.sha256`](./countdown.sha256) (published beside `./countdown` for the release channel).
+In-repo companion file: [`src/countdown.sha256`](src/countdown.sha256) (published beside `src/countdown` for the release channel).
 
 Operator-facing install steps, one-liners, and full integrity outcomes live in [`README.md`](./README.md). This section states **security trust posture** only.
 

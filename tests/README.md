@@ -1,6 +1,6 @@
 # Tests (countdown)
 
-POSIX `/bin/sh` CI suite for the Type 0 + domain ship unit `./countdown`.
+POSIX `/bin/sh` CI suite for the Type 0 + domain ship unit `src/countdown`.
 
 Bootstrap architecture matches the timer Type 0 harness; this suite is specialized for `APP_NAME=countdown` and adds **countdown domain** coverage (duration + remaining time).
 

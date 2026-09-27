@@ -16,7 +16,7 @@ It defines modular function organization for a **monolithic yet modular** single
 
 ### 1.1 Human-facing
 
-**In one sentence:** `./countdown` stays one file you can `curl | sh`, with named function prefixes so helpers are not anonymous.
+**In one sentence:** `src/countdown` stays one file you can `curl | sh`, with named function prefixes so helpers are not anonymous.
 
 | You | The other role | Not this |
 |-----|----------------|----------|
@@ -27,11 +27,11 @@ It defines modular function organization for a **monolithic yet modular** single
 
 | Surface | What you open | What for |
 |---------|---------------|----------|
-| `./countdown` | single shipped file | prefixes + zones |
+| `src/countdown` | single shipped file | prefixes + zones |
 
 | You do… | What it means | What you type |
 |---------|---------------|---------------|
-| Add a countdown helper | Name it `countdown_*`, not a bare `start`. | edit `./countdown` |
+| Add a countdown helper | Name it `countdown_*`, not a bare `start`. | edit `src/countdown` |
 
 ---
 
@@ -48,7 +48,7 @@ CIAO-Lite shell CLIs distributed as one-liners **MUST** use:
 | **Documented units** | Every public helper carries a defensive header and safe defaults |
 | **Requirements extract policy** | Durable rules live in `requirement-*.md`; code comments encode intent and Protection Zones |
 
-Optional multi-file layout under `src/` for future authoring **MAY** exist only if a build or pack step still produces **one** installable artifact and this requirement is updated. Until then, `./countdown` remains the single shipped script.
+The installable CLI is **one** file, `src/countdown`, so `curl | sh` fetches that file directly. A later multi-file authoring layout **MAY** exist only if a build or pack step still publishes that one artifact and this requirement is updated in the same change.
 
 ### 2.2 Official function prefix table (mandatory)
 
@@ -86,7 +86,7 @@ Every non-trivial function **MUST** include a defensive header of this shape (tr
 
 #### 2.3.1 Product-source documentation authority
 
-Optional `ALIGNMENT` / `See` / “fully synchronized with” lines in **product source** (`./countdown`) **MUST** cite only **live** `docs/requirements/requirement-*.md` paths that exist on disk and appear in `docs/requirements/index.md`.
+Optional `ALIGNMENT` / `See` / “fully synchronized with” lines in **product source** (`src/countdown`) **MUST** cite only **live** `docs/requirements/requirement-*.md` paths that exist on disk and appear in `docs/requirements/index.md`.
 
 | Allowed in product source comments | Forbidden in product source comments |
 |------------------------------------|--------------------------------------|
@@ -163,14 +163,14 @@ function_name() {
 | Item | Value for countdown |
 |------|------------------------|
 | **Product / binary** | `countdown` (`APP_NAME`) |
-| **Single shipped script** | Repo root `./countdown` (~2.9k lines, `#!/bin/sh`) |
-| **`src/` directory** | **Not used** for runtime — single-file ship unit only |
+| **Single shipped script** | `src/countdown` (~2.9k lines, `#!/bin/sh`) |
+| **`src/` directory** | Holds the single ship unit `src/countdown` and companion `src/countdown.sha256`. Runtime is still that one file, not a multi-file program |
 | **Domain prefix `countdown_*`** | **In use** — named-countdown domain ops; **behavior SSOT** = `requirement-domain-countdown.md` (not this modular file) |
 | **Bootstrap** | Always `app_main "$@"` at end of script — **no** `${0##*/}` / `APP_NAME` basename gate (required for `curl \| sh`; INC-20260712-001) |
 
 #### Live prefix inventory (authoritative categories)
 
-| Prefix | Live examples in `./countdown` |
+| Prefix | Live examples in `src/countdown` |
 |--------|----------------------------------|
 | `out_` | `out_text`, `out_success`, `out_info`, `out_warn`, `out_error`, `out_die`, `out_plain`, `out_msg_n`, `out_empty_line`, `out_double_line`, `out_json`, `out_json_error` |
 | `inst_` | `inst_perform_install`, `inst_perform_install_prepare_target`, `inst_perform_install_download_with_checksum`, `inst_perform_install_download_without_checksum`, `inst_perform_install_atomic_install`, `inst_maybe_install`, `inst_self_update`, `inst_self_uninstall` (+ determine_bin / confirm_and_remove / cleanup_path), `inst_is_installed`, `inst_get_version` |
@@ -192,7 +192,7 @@ function_name() {
 
 #### New function checklist (this project)
 
-When adding a function to `./countdown`:
+When adding a function to `src/countdown`:
 
 1. Choose the correct prefix from §2.2 / this inventory.  
 2. Add the defensive header (full for non-trivial logic).  
@@ -284,7 +284,7 @@ A modular-structure change for countdown is **not done** if any of the following
 | `docs/requirements/requirement-shell-idempotency.md` | Re-run safety inside ensure helpers |
 | `docs/requirements/requirement-shell-output-requirements.md` | `out_*` ownership |
 | `docs/requirements/index.md` | Registry SSOT |
-| `./countdown` | Implementation under modular design rules |
+| `src/countdown` | Implementation under modular design rules |
 
 ---
 

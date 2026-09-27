@@ -19,7 +19,7 @@ Type N (non-online-install → empty argv = help) does **not** apply to this pro
 It defines what happens when the tool is invoked with **no command and no flags**, including the classic one-liner:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/Wilgat/countdown/main/countdown | /bin/sh
+curl -fsSL https://raw.githubusercontent.com/Wilgat/countdown/main/src/countdown | /bin/sh
 ```
 
 ### 1.1 Human-facing
@@ -35,7 +35,7 @@ curl -fsSL https://raw.githubusercontent.com/Wilgat/countdown/main/countdown | /
 
 | Surface | What you open | What for |
 |---------|---------------|----------|
-| `./countdown` | program with no args | install-ensure |
+| `src/countdown` | program with no args | install-ensure |
 | curl one-liner | first install | same empty-argv path |
 
 | You do… | What it means | What you type |
@@ -133,7 +133,7 @@ Empty argv means **install-ensure** for three detect cases:
 |------|------------------------|
 | **Empty-argv type** | **Type O — Online-install** (install-ensure; not Type N help-default) |
 | **Product / binary** | `countdown` (`APP_NAME`) |
-| **Ship unit** | Repo root `./countdown` |
+| **Ship unit** | `src/countdown` |
 | **Dispatcher** | `app_main` — empty-argv block **before** flag/command parse default help |
 | **Install ensure** | `inst_perform_install` (quiet/json and already-installed no-op) |
 | **Friendly first install** | `inst_maybe_install` (TTY confirm / non-TTY auto) when not installed and not quiet/json |
@@ -142,7 +142,7 @@ Empty argv means **install-ensure** for three detect cases:
 | **Local path** | `USER_BIN` default `${HOME}/.local/bin` |
 | **Force wiring** | `--force` → `FORCE=1` and `FORCE_REINSTALL=1` in `app_main` |
 | **Output SSOT** | `out_success` / `out_info` / `out_json` / errors via `out_*` |
-| **Channel** | `SCRIPT_URL` (compose from `REPO_USER` / `REPO_NAME` / `APP_NAME`) for download path inside install |
+| **Channel** | `SCRIPT_URL` (compose from `REPO_USER` / `REPO_NAME` / `SCRIPT_RELPATH`, default `src/${APP_NAME}`) for download path inside install |
 | **Tests** | `tests/test_cli.sh` (Case A failure when not installed); `tests/test_install_lifecycle.sh` (Case B local + Case C global already-installed → not help) |
 
 #### Dispatcher algorithm (normative sketch)
@@ -248,7 +248,7 @@ This requirement is satisfied when all of the following hold:
 | `docs/requirements/requirement-shell-self-management.md` | self-update / uninstall (not empty-argv default) |
 | `docs/requirements/requirement-shell-output-requirements.md` | out_* / JSON purity |
 | `docs/requirements/requirement-shell-automatic-checksum.md` | Integrity on install download path |
-| Repo root `./countdown` | Implementation (`app_main`, `inst_*`) |
+| `src/countdown` | Implementation (`app_main`, `inst_*`) |
 | `tests/test_cli.sh`, `tests/test_install_lifecycle.sh` | Regression coverage |
 
 ---

@@ -100,8 +100,8 @@ This file is **class law + residual SSOT**, not a second copy of Type 0 lifecycl
 | **Primary runtime / OS family** | POSIX Linux (and compatible UNIX where `/bin/sh` + coreutils/`sha256sum`/`mktemp` exist) |
 | **Architectures supported** | any arch with a POSIX sh and the external tools the script invokes (no arch-specific binary) |
 | **Git surface** | used for product publish (`github.com/Wilgat/countdown`) |
-| **Ship unit / install** | yes — repo root `./countdown` + companion `countdown.sha256`; Type 0 online install (peer shell REQs) |
-| **Product version SSOT** | `VERSION="…"` hard-assign in `./countdown` (align with README Version badge + CHANGELOG) |
+| **Ship unit / install** | yes — `src/countdown` + companion `src/countdown.sha256`; Type 0 online install (peer shell REQs) |
+| **Product version SSOT** | `VERSION="…"` hard-assign in `src/countdown` (align with README Version badge + CHANGELOG) |
 | **Domain SSOT** | `requirement-domain-countdown` — named-countdown ops beyond Type 0 |
 | **Actor / role / subject / approver** | **considered — no dest approver and no approval subject** (no dest approval machine) |
 | **Dest fence conditions** | **considered — no dest fence conditions** (no dest inbound / approve / reject queue) |

@@ -3,7 +3,7 @@
 Living checklist for product and bootstrap-origin reviews.  
 **Always** re-check items in [`lessons.md`](./lessons.md) (prior report regressions).
 
-**Ship unit:** `./countdown`  
+**Ship unit:** `src/countdown` (companion `src/countdown.sha256`)  
 **Immediate bootstrap (local reference, may be gitignored):** `./timer` when present  
 **Root origin (external sibling):** selfmanaged Type 0 baseline when available  
 **Tests:** `./tests/run.sh`  
@@ -15,7 +15,7 @@ Living checklist for product and bootstrap-origin reviews.
 
 - [ ] Working tree / scope named (full product / local diff / origin hop / PR)  
 - [ ] Version SSOTs consistent (script `VERSION`, README badge, CHANGELOG)  
-- [ ] `countdown.sha256` matches `./countdown` bytes (bare hex companion)  
+- [ ] `src/countdown.sha256` matches `src/countdown` bytes (bare hex companion)  
 - [ ] `./tests/run.sh` baseline known (or run before claiming clean)  
 - [ ] Load **lessons.md** and re-verify each **Must re-check** item  
 - [ ] Bootstrap direction: A→B only (`requirement-bootstrap-chain`)  

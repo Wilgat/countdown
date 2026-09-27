@@ -1,6 +1,6 @@
 # countdown - Lightweight per-user named countdown timers
 
-![Version](https://img.shields.io/badge/Version-1.1.7-blue?style=flat-square)
+![Version](https://img.shields.io/badge/Version-1.1.8-blue?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 [![CIAO](https://img.shields.io/badge/Philosophy-CIAO%20(Caution%20%E2%80%A2%20Intentional%20%E2%80%A2%20Anti--fragile%20%E2%80%A2%20Over--protect)-purple.svg)](https://github.com/cloudgen/ciao)
 [![Shell](https://img.shields.io/badge/Shell-POSIX%20sh-orange?style=flat-square)]()
@@ -53,13 +53,13 @@ Author: **Wilgat Wong** &lt;wilgat.wong@gmail.com&gt;
 **For normal users (recommended):**
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/Wilgat/countdown/main/countdown | sh
+curl -fsSL https://raw.githubusercontent.com/Wilgat/countdown/main/src/countdown | sh
 ```
 
 **System-wide installation (requires root):**
 
 ```sh
-sudo curl -fsSL https://raw.githubusercontent.com/Wilgat/countdown/main/countdown | sudo sh
+sudo curl -fsSL https://raw.githubusercontent.com/Wilgat/countdown/main/src/countdown | sudo sh
 ```
 
 After installation, **restart your terminal** or run `source ~/.bashrc` (or `~/.zshrc`).
@@ -69,17 +69,17 @@ After installation, **restart your terminal** or run `source ~/.bashrc` (or `~/.
 ```sh
 git clone https://github.com/Wilgat/countdown.git
 cd countdown
-chmod +x countdown
-./countdown help
-./countdown install
+chmod +x src/countdown
+./src/countdown help
+./src/countdown install
 ```
 
 ### Checksum verification (automatic companion)
 
 Default install channel:  
-`https://raw.githubusercontent.com/Wilgat/countdown/main/countdown`
+`https://raw.githubusercontent.com/Wilgat/countdown/main/src/countdown`
 
-When `CHECKSUM` is not set, install and self-update **download `${SCRIPT_URL}.sha256` themselves** (in-repo companion: [`countdown.sha256`](./countdown.sha256)). Human mode is designed to show **link** (companion URL), **value** (expected digest), and **result** (match / mismatch / missing).
+When `CHECKSUM` is not set, install and self-update **download `${SCRIPT_URL}.sha256` themselves** (in-repo companion: [`src/countdown.sha256`](src/countdown.sha256)). Human mode is designed to show **link** (companion URL), **value** (expected digest), and **result** (match / mismatch / missing).
 
 | Outcome | What happens |
 |---------|----------------|
@@ -90,8 +90,8 @@ When `CHECKSUM` is not set, install and self-update **download `${SCRIPT_URL}.sh
 **Advanced / CI — pin exact bytes with an explicit checksum** (optional; not listed in `help` / `about`):
 
 ```sh
-CHECKSUM=b32a0ae3d959410677b5ecb82a0a9b6077fb8913a6675f190aaf8b4298536396 \
-  curl -fsSL https://raw.githubusercontent.com/Wilgat/countdown/main/countdown | sh
+CHECKSUM=654b9297fa61146599f0c721d397f9dcbb4c2ce033775b44b311cb1cc957c843 \
+  curl -fsSL https://raw.githubusercontent.com/Wilgat/countdown/main/src/countdown | sh
 ```
 
 Prefer regenerating the pin from the published companion whenever you cut a release.
@@ -99,7 +99,7 @@ Prefer regenerating the pin from the published companion whenever you cut a rele
 **For maintainers:**
 
 ```sh
-sha256sum countdown | awk '{print $1}' > countdown.sha256
+sha256sum src/countdown | awk '{print $1}' > src/countdown.sha256
 ```
 
 Same-channel SHA-256 proves byte consistency with the companion. It is not package signing. See [`SECURITY.md`](./SECURITY.md).
@@ -167,7 +167,8 @@ Empty argv (`countdown` with no command) means **install or re-check install**, 
 |----------|----------------|
 | `REPO_USER` | `Wilgat` — GitHub owner for composed `SCRIPT_URL` |
 | `REPO_NAME` | `countdown` — GitHub repo for composed `SCRIPT_URL` |
-| `SCRIPT_URL` | `https://raw.githubusercontent.com/Wilgat/countdown/main/countdown` |
+| `SCRIPT_RELPATH` | `src/countdown` — path inside the repo (`src/${APP_NAME}`) |
+| `SCRIPT_URL` | `https://raw.githubusercontent.com/Wilgat/countdown/main/src/countdown` |
 | `CHECKSUM` | Optional runtime pin (not listed in help/about) |
 
 ---
@@ -226,6 +227,6 @@ MIT License — see the [LICENSE](LICENSE) file for details.
 
 ## Last Update
 
-2026-09-27 — 1.1.7: cache scratch is one private folder per login and per process; `about` names the folder in use plus preferred and fallback paths. A skipped cache folder stays silent.
+2026-09-27 — 1.1.8: the installable file is `src/countdown`. The curl one-liner uses `https://raw.githubusercontent.com/Wilgat/countdown/main/src/countdown`.
 
 **Made with care and a healthy dose of paranoia.** ⏱️

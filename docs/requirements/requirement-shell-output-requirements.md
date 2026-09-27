@@ -60,7 +60,7 @@ It implements **CIAO Principle 5 — Single Source of Output** (cloudgen/ciao **
 
 ### 2.1.1 Allowed `printf` / `echo` exceptions (this project)
 
-| Exception class | Rule | Live examples in `./countdown` |
+| Exception class | Rule | Live examples in `src/countdown` |
 |-----------------|------|-----------------------------------|
 | **A. Inside output SSOT** | Only `out_text`, `out_json`, and `out_json_error` may `printf` to fd 1/2 for **product** human or JSON lines. Nested `printf … \| sed` used only to escape strings for those emitters is part of the same SSOT. | `out_text` level cases; `out_json` / `out_json_error` body builders |
 | **B. Function return-via-stdout** | A helper may `printf '%s' "$value"` **solely** so callers capture it with `$(…)`. Prefer `printf` over `echo`. Callers must capture; bare top-level invocation must not be used as the user-facing message path. **Not** for a helper whose body contains `read`. | `inst_self_uninstall_determine_bin`, `util_get_install_bin_path`, `inst_get_version`, `util_cache_host_kind`, `util_cache_login`, `util_preferred_cache_dir`, `util_fallback_cache_dir`, `util_fallback2_cache_dir`, `util_persistent_storage_dir`, `util_resolve_persistent_storage`, `util_resolve_storage`, `util_get_current_shell` |
@@ -158,7 +158,7 @@ Align with SSOT-of-stdout and SSOT-of-stderr terms:
 | Item | Value for countdown |
 |------|------------------------|
 | **Product / binary** | `countdown` (`APP_NAME`) |
-| **Implementation file** | Repo root `./countdown` |
+| **Implementation file** | `src/countdown` |
 | **Human SSOT** | `out_text` |
 | **JSON SSOT** | `out_json` / `out_json_error` |
 | **Mode flags** | `QUIET`, `JSON`, `DEBUG`, `TTY` (defaults `0` except TTY when stdin/stdout are TTYs) |
@@ -168,7 +168,7 @@ Align with SSOT-of-stdout and SSOT-of-stderr terms:
 
 #### Live `out_*` inventory
 
-| Function | Role in `./countdown` |
+| Function | Role in `src/countdown` |
 |----------|-------------------------|
 | `out_text` | Human SSOT; JSON short-circuit; quiet filter; channel by level |
 | `out_success` / `out_info` / `out_warn` / `out_error` | Level wrappers |
@@ -258,7 +258,7 @@ When `countdown` runs on Termux, Git Bash, Windows cmd, or the same class (this 
 
 1. Add raw `echo`, `printf`, or direct fd writes for **product** user/machine messages outside the central output functions (do not “ban” legitimate §2.1.1 exceptions).  
 2. Misuse return-via-stdout, file redirects, or tool pipes as cover for user-facing banners without `out_*`.  
-3. Cite `template-*.md` or `skill-*.md` in **product source** (`./countdown`) as output authority — cite this requirement file only.  
+3. Cite `template-*.md` or `skill-*.md` in **product source** (`src/countdown`) as output authority — cite this requirement file only.  
 4. Bypass `out_*` for “quick debug” on stdout.  
 5. Remove or weaken **`--json` forces quiet** / human-suppression in `out_text`.  
 6. Emit human banners on stdout while claiming JSON mode.  
@@ -297,7 +297,7 @@ Output-related work for countdown is **not done** if any of the following fail:
 | `docs/requirements/requirement-shell-modular-function-design.md` | `out_*` prefix ownership |
 | `docs/requirements/requirement-shell-interactive-vs-noninteractive.md` | Mode interaction with quiet/json |
 | `docs/requirements/index.md` | Registry SSOT |
-| `./countdown` | Implementation under test |
+| `src/countdown` | Implementation under test |
 
 ---
 

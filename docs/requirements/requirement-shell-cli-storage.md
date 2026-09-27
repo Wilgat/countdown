@@ -34,7 +34,7 @@ The preferred cache is **not** a ram-drive **project** tree (`/dev/shm/${APP_NAM
 
 | Surface | What you open | What for |
 |---------|---------------|----------|
-| `./countdown` | program file people install | live resolve + `about` |
+| `src/countdown` | program file people install | live resolve + `about` |
 | `countdown about` | command | cache folder used, preferred, fallbacks, persistence |
 | `countdown --json about` | command | `cache_used` / `cache_preferred` / `cache_fallback` / `cache_fallback_2` / `persistence_storage` |
 
@@ -165,7 +165,7 @@ Domain verbs, duration, and `--persist` flag catalog stay on `requirement-domain
 | Item | Value for countdown |
 |------|------------------------|
 | **Product / APP_NAME** | `countdown` |
-| **Ship unit** | `./countdown` |
+| **Ship unit** | `src/countdown` |
 | **Cache resolver name** | `util_resolve_storage` |
 | **Path helpers** | `util_preferred_cache_dir`, `util_fallback_cache_dir`, `util_fallback2_cache_dir` |
 | **Linux preferred** | `/dev/shm/cache/cache-${APP_NAME}-${login}-$$` mode `700` |
@@ -270,7 +270,7 @@ When `countdown` runs on Termux, Git Bash, Windows cmd, or the same class (this 
 | `docs/requirements/requirement-shell-modular-function-design.md` | `util_*` prefix ownership |
 | `docs/requirements/requirement-shell-output-requirements.md` | class B return-via-stdout vs `out_*` |
 | `docs/requirements/requirement-domain-countdown.md` | Domain `--persist` semantics; uses persistence folder |
-| `./countdown` | Implementation |
+| `src/countdown` | Implementation |
 
 ---
 

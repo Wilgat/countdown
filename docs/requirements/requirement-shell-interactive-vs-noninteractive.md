@@ -130,7 +130,7 @@ interactive   non-interactive
 | Item | Value for countdown |
 |------|------------------------|
 | **Product / binary** | `countdown` |
-| **Implementation** | Repo root `./countdown` |
+| **Implementation** | `src/countdown` |
 | **Mode globals** | `TTY`, `QUIET`, `JSON`, `DEBUG`, `FORCE`, `FORCE_REINSTALL` |
 | **TTY init** | `[ -t 0 ] && [ -t 1 ] && TTY=1` at script top (**outside functions**); helpers consume `TTY` |
 | **Flag parse SSOT** | `app_main` |
@@ -312,7 +312,7 @@ Mode-related work for countdown is **not done** if any of the following fail:
 | `docs/requirements/requirement-shell-self-management.md` | Uninstall confirm / force policy |
 | `docs/requirements/requirement-shell-idempotency.md` | Re-run safety under automation |
 | `docs/requirements/index.md` | Registry SSOT |
-| `./countdown` | Implementation under test |
+| `src/countdown` | Implementation under test |
 
 ---
 

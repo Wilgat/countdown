@@ -10,7 +10,7 @@
 : "${TESTS_ROOT:=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)}"
 : "${REPO_ROOT:=$(CDPATH= cd -- "${TESTS_ROOT}/.." && pwd)}"
 : "${APP_NAME:=countdown}"
-: "${SCRIPT:=${REPO_ROOT}/${APP_NAME}}"
+: "${SCRIPT:=${REPO_ROOT}/src/${APP_NAME}}"
 : "${PASS:=0}"
 : "${FAIL:=0}"
 : "${SKIP:=0}"
@@ -98,8 +98,11 @@ _trunc() {
 # --- isolation helpers ---
 ci_start_channel() {
     CI_CHANNEL_DIR=$(mktemp -d "${TMPDIR:-/tmp}/tm-channel.XXXXXX")
-    cp "${SCRIPT}" "${CI_CHANNEL_DIR}/${APP_NAME}"
-    sha256sum "${CI_CHANNEL_DIR}/${APP_NAME}" | awk '{print $1}' > "${CI_CHANNEL_DIR}/${APP_NAME}.sha256"
+    # Mirror the published raw path: .../main/src/${APP_NAME}
+    CI_CHANNEL_REL="src/${APP_NAME}"
+    mkdir -p "${CI_CHANNEL_DIR}/src"
+    cp "${SCRIPT}" "${CI_CHANNEL_DIR}/${CI_CHANNEL_REL}"
+    sha256sum "${CI_CHANNEL_DIR}/${CI_CHANNEL_REL}" | awk '{print $1}' > "${CI_CHANNEL_DIR}/${CI_CHANNEL_REL}.sha256"
 
     CI_PORT=$(python3 -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1",0)); print(s.getsockname()[1]); s.close()')
     (
@@ -107,7 +110,7 @@ ci_start_channel() {
         exec python3 -m http.server "${CI_PORT}" --bind 127.0.0.1
     ) >/dev/null 2>&1 &
     CI_HTTP_PID=$!
-    CI_SCRIPT_URL="http://127.0.0.1:${CI_PORT}/${APP_NAME}"
+    CI_SCRIPT_URL="http://127.0.0.1:${CI_PORT}/${CI_CHANNEL_REL}"
 
     _i=0
     while [ "$_i" -lt 50 ]; do

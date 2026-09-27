@@ -26,9 +26,11 @@
 #
 # APP NAME: countdown via APP_NAME (Config SSOT; safe default below).
 # REPO_USER / REPO_NAME: GitHub owner/repo identity for the install channel.
-# SCRIPT_URL: product channel SSOT — composed from repo identity + APP_NAME (raw content URL).
-#   Override SCRIPT_URL with env for a full custom channel; or override REPO_* before first use
-#   so the composed default follows a fork. Empty SCRIPT_URL disables version-check / self-update network steps.
+# SCRIPT_RELPATH: path of this file inside the repository (default src/${APP_NAME}).
+# SCRIPT_URL: product channel SSOT — composed from repo identity + SCRIPT_RELPATH (raw content URL).
+#   Override SCRIPT_URL with env for a full custom channel; or override REPO_* / SCRIPT_RELPATH
+#   before first use so the composed default follows a fork.
+#   Empty SCRIPT_URL disables version-check / self-update network steps.
 #
 # Author: Wilgat Wong <wilgat.wong@gmail.com>
 #
@@ -44,9 +46,9 @@ set -u  # Treat unset variables as error (defensive)
 : "${APP_DESC:=Lightweight per-user named countdown timers (volatile or persistent)}"
 : "${SHORT_DESCRIPTION:=${APP_DESC}}"
 : "${DESCRIPTION:=POSIX /bin/sh CLI you run as yourself. Start named remaining-time countdowns (start/stop/status/list/kill/reset). Also install, about, version-check, self-update, self-uninstall. No command means install or re-check install.}"
-# Product version SSOT (specialized 1.1.7: per-process cache leaf). Extractors use: grep '^VERSION="'
-VERSION="1.1.7"
-: "${VERSION:=1.1.7}"
+# Product version SSOT (specialized 1.1.8: ship unit at src/${APP_NAME}). Extractors use: grep '^VERSION="'
+VERSION="1.1.8"
+: "${VERSION:=1.1.8}"
 
 # Runtime flags (safe defaults)
 : "${QUIET:=0}"
@@ -88,7 +90,8 @@ fi
 # Repository identity → install channel (Option B: raw.githubusercontent.com)
 : "${REPO_USER:=Wilgat}"
 : "${REPO_NAME:=countdown}"
-: "${SCRIPT_URL:=https://raw.githubusercontent.com/${REPO_USER}/${REPO_NAME}/main/${APP_NAME}}"
+: "${SCRIPT_RELPATH:=src/${APP_NAME}}"
+: "${SCRIPT_URL:=https://raw.githubusercontent.com/${REPO_USER}/${REPO_NAME}/main/${SCRIPT_RELPATH}}"
 : "${CHECKSUM:=}"
 
 [ -t 0 ] && [ -t 1 ] && TTY=1
@@ -1054,7 +1057,7 @@ inst_self_update() {
         out_info "Starting self-update of ${APP_NAME}..."
     fi
 
-    # SCRIPT_URL is Config SSOT (composed default from REPO_* / APP_NAME).
+    # SCRIPT_URL is Config SSOT (composed default from REPO_* / SCRIPT_RELPATH).
     # Override via env for forks or offline channels. Empty → fail loud below.
 
     REMOTE_VERSION=$(util_fetch_remote_version "${SCRIPT_URL}")
@@ -1554,7 +1557,7 @@ ver_check() {
     : "${QUIET:=0}"
     : "${SCRIPT_URL:=}"
 
-    # SCRIPT_URL is Config SSOT (composed default from REPO_USER/REPO_NAME/APP_NAME).
+    # SCRIPT_URL is Config SSOT (composed default from REPO_USER/REPO_NAME/SCRIPT_RELPATH).
     # Override via env for forks or offline channels. Empty → network steps fail loud.
 
     # Fetch remote version (curl or wget)
@@ -3178,8 +3181,10 @@ app_help() {
 
     # Effective channel values (Config SSOT / env override) so help is actionable.
     # CHECKSUM is an install-path runtime pin only — never listed here (requirement-shell-automatic-checksum).
+    : "${APP_NAME:=countdown}"
     : "${REPO_USER:=Wilgat}"
     : "${REPO_NAME:=countdown}"
+    : "${SCRIPT_RELPATH:=src/${APP_NAME}}"
     : "${SCRIPT_URL:=}"
 
     out_info "Environment:"
@@ -3187,6 +3192,8 @@ app_help() {
     out_plain "                       GitHub owner used to compose default SCRIPT_URL"
     out_plain "  REPO_NAME            ${REPO_NAME}"
     out_plain "                       GitHub repo used to compose default SCRIPT_URL"
+    out_plain "  SCRIPT_RELPATH       ${SCRIPT_RELPATH}"
+    out_plain "                       Repo path used to compose default SCRIPT_URL"
     if [ -n "${SCRIPT_URL}" ]; then
         out_plain "  SCRIPT_URL           ${SCRIPT_URL}"
     else

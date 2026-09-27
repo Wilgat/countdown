@@ -90,7 +90,7 @@ Domain law **MUST** define (when claimed):
 |------|--------|
 | **Domain SSOT file** | This file: `docs/requirements/requirement-domain-countdown.md` |
 | **Product / APP_NAME** | `countdown` |
-| **Ship unit** | `./countdown` |
+| **Ship unit** | `src/countdown` |
 | **Domain prefix** | `countdown_*` |
 | **Bootstrap** | Specialized from timer; root origin selfmanaged — domain law applies to **leaf only** |
 
@@ -238,7 +238,7 @@ A domain change for countdown is **not done** if any fail:
 | `docs/requirements/requirement-shell-output-requirements.md` | `out_*` channels |
 | `docs/requirements/requirement-bootstrap-chain.md` | Leaf owns domain defects |
 | `docs/requirements/requirement-shell-cli-storage.md` | Type 0 cache folder **and** persistence folder; domain `--persist` uses the persistence folder |
-| `./countdown` | Implementation |
+| `src/countdown` | Implementation |
 | `tests/test_countdown_domain.sh` | Domain suite |
 
 ---

@@ -1,6 +1,6 @@
 # =============================================================================
 # .gitignore — skill-create-gitignore
-# Detected: Shell (POSIX CLI ./countdown + tests/*.sh)
+# Detected: Shell (POSIX CLI src/countdown + tests/*.sh)
 # Docs: Pattern A — track docs/requirements/** only; ignore other docs/**
 # Harness root: AGENTS.md local (avoid-file-leaks / skill-file-leaks-check)
 # Artifacts: compiled, caches, temp, secrets ignored (universal + shell)
@@ -104,7 +104,7 @@ docs/**
 !docs/requirements/
 !docs/requirements/**
 
-# --- local bootstrap reference only (A=timer); product ship unit is ./countdown ---
+# --- local bootstrap reference only (A=timer); product ship unit is src/countdown ---
 # Do not publish timer into the countdown repository (bootstrap direction A→B).
 /timer
 /timer.sha256

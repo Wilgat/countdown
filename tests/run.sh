@@ -14,7 +14,7 @@ REPO_ROOT=$(CDPATH= cd -- "${TESTS_ROOT}/.." && pwd)
 export TESTS_ROOT REPO_ROOT
 : "${APP_NAME:=countdown}"
 export APP_NAME
-SCRIPT="${REPO_ROOT}/${APP_NAME}"
+SCRIPT="${REPO_ROOT}/src/${APP_NAME}"
 export SCRIPT
 
 # shellcheck source=helpers.sh

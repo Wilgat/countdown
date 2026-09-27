@@ -121,21 +121,21 @@ Root may write global install path; non-root uses user path. Do not assume root 
 | Item | Value for countdown |
 |------|------------------------|
 | **Product / binary** | `countdown` (`APP_NAME`) |
-| **Implementation file** | Repo root `./countdown` |
+| **Implementation file** | `src/countdown` |
 | **Dispatcher** | `app_main` routes `version-check` → `ver_check`; `self-update` → `inst_self_update`; `self-uninstall` → `inst_self_uninstall`; `about` → `app_about` |
 | **Install orchestrator SSOT** | `inst_perform_install` (+ prepare / download with or without checksum / atomic install) |
 | **Version compare** | `ver_gt` (pure POSIX); local version via `inst_get_version` |
 | **Install presence** | `inst_is_installed` |
 | **Paths** | `GLOBAL_BIN` default `/usr/local/bin`; `USER_BIN` default `${HOME}/.local/bin` |
 | **Repository identity** | `REPO_USER` default `Wilgat`; `REPO_NAME` default `countdown` |
-| **Release channel** | `SCRIPT_URL` Config default composed as `https://raw.githubusercontent.com/${REPO_USER}/${REPO_NAME}/main/${APP_NAME}` (this project: `https://raw.githubusercontent.com/Wilgat/countdown/main/countdown` — product channel SSOT; override `SCRIPT_URL` or `REPO_*` via env if needed) |
+| **Release channel** | `SCRIPT_URL` Config default composed as `https://raw.githubusercontent.com/${REPO_USER}/${REPO_NAME}/main/${SCRIPT_RELPATH}` with `SCRIPT_RELPATH` default `src/${APP_NAME}` (this project: `https://raw.githubusercontent.com/Wilgat/countdown/main/src/countdown` — product channel SSOT; override `SCRIPT_URL`, `SCRIPT_RELPATH`, or `REPO_*` via env if needed) |
 | **Strict digest pin** | Runtime `CHECKSUM` when set in process env → `inst_perform_install_download_with_checksum` (secondary install-path only; **not** shown in `help`/`about`; see automatic-checksum requirement) |
 | **Companion digest** | Default `${SCRIPT_URL}.sha256` via `inst_perform_install_download_without_checksum` — law + transparency: `requirement-shell-automatic-checksum.md` |
 | **Force reinstall** | `FORCE_REINSTALL`; CLI `--force` required by CLI interface requirement |
 | **Uninstall steps** | `inst_self_uninstall_determine_bin` → `inst_self_uninstall_confirm_and_remove` → `inst_self_uninstall_cleanup_path` |
 | **PATH ensure** | `path_add_shell` / bash / zsh / fish helpers on user install |
 | **Privilege** | Type 0 only for self-management surface; no dedicated system user |
-| **Version SSOT** | `VERSION` in script config block (product SSOT; currently `VERSION="1.1.3"`) |
+| **Version SSOT** | `VERSION` in script config block (product SSOT; currently `VERSION="1.1.8"`) |
 
 #### Normative acceptance behaviors (this project)
 
@@ -155,7 +155,7 @@ Root may write global install path; non-root uses user path. Do not assume root 
 |------|--------|
 | Downgrade gate via `ver_gt` (refuse unless `--force`) | **Implemented** in `inst_self_update` (2026-07-12) |
 | CLI `--force` → `FORCE` / `FORCE_REINSTALL` | **Implemented** in `app_main` |
-| `SCRIPT_URL` default channel URL | **This project:** non-empty product default composed from `REPO_USER` / `REPO_NAME` / `APP_NAME` (`https://raw.githubusercontent.com/Wilgat/countdown/main/countdown`); product README must show simple literal one-liner(s) from that SSOT; env may still override |
+| `SCRIPT_URL` default channel URL | **This project:** non-empty product default composed from `REPO_USER` / `REPO_NAME` / `SCRIPT_RELPATH` (`https://raw.githubusercontent.com/Wilgat/countdown/main/src/countdown`); product README must show simple literal one-liner(s) from that SSOT; env may still override |
 
 ### 2.9 Why This Requirement Exists (Direct CIAO Alignment)
 
@@ -242,7 +242,7 @@ Work claiming self-management support for countdown is **not done** if any of th
 | `docs/requirements/requirement-shell-output-requirements.md` | Lifecycle messaging / quiet / JSON |
 | `docs/requirements/requirement-shell-modular-function-design.md` | `inst_*` / `out_*` ownership |
 | `docs/requirements/index.md` | Registry SSOT |
-| `./countdown` | Implementation under test |
+| `src/countdown` | Implementation under test |
 
 ---
 

@@ -87,7 +87,7 @@ Force **MUST NOT** be used as a silent way to skip integrity verification.
 | Item | Value for countdown |
 |------|------------------------|
 | **Product / binary** | `countdown` (`APP_NAME`) |
-| **Implementation file** | Repo root `./countdown` |
+| **Implementation file** | `src/countdown` |
 | **Install detect SSOT** | `inst_is_installed` / `inst_get_version` |
 | **Install ensure SSOT** | `inst_perform_install` (+ download/atomic helpers) |
 | **Force reinstall var** | `FORCE_REINSTALL` (default `0`); CLI `--force` must set this per `requirement-shell-cli-interface.md` |
@@ -202,7 +202,7 @@ A state-changing shell change for countdown is **not done** if any of the follow
 | `docs/requirements/requirement-shell-self-management.md` | Lifecycle commands; integrity + downgrade policy |
 | `docs/requirements/requirement-shell-output-requirements.md` | Messages on no-op / already-done paths |
 | `docs/requirements/index.md` | Registry SSOT |
-| `./countdown` | Implementation under test |
+| `src/countdown` | Implementation under test |
 
 ---
 
